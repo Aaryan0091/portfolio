@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { LeetCodeActivity, LeetCodeActivitySkeleton } from "./_components/leetcode-activity";
 import { TextReveal } from "./_components/text-reveal";
 import { ThemeToggle } from "./_components/theme-toggle";
 
@@ -75,19 +77,38 @@ const principles = [
 const toolkit = [
   {
     label: "Languages",
-    items: ["Python", "JavaScript / TypeScript", "C++ / C", "SQL", "Solidity"],
+    items: ["Python", "JavaScript / TypeScript", "C++", "SQL", "Solidity"],
   },
   {
-    label: "Full-stack",
-    items: ["React / Next.js", "Node.js / Express", "REST APIs", "WebSockets", "OAuth 2.0"],
+    label: "Full-stack & data",
+    items: [
+      "React / Next.js",
+      "Node.js / Express.js",
+      "PostgreSQL / MongoDB",
+      "REST APIs / WebSockets",
+      "OAuth 2.0 / authentication",
+      "HTML / CSS",
+    ],
   },
   {
     label: "AI / ML",
-    items: ["Machine learning", "Deep learning", "NLP", "TensorFlow / scikit-learn", "spaCy / NLTK"],
+    items: [
+      "Machine learning / deep learning",
+      "Natural language processing",
+      "TensorFlow / scikit-learn",
+      "Pandas / NumPy",
+      "spaCy / NLTK",
+    ],
   },
   {
-    label: "Data & platforms",
-    items: ["Supabase / Firebase", "PostgreSQL / MongoDB", "Git / GitHub", "Vercel / Render", "Linux / Playwright"],
+    label: "Platforms & delivery",
+    items: [
+      "Supabase / Firebase",
+      "Git / GitHub / GitHub API",
+      "Playwright / Postman",
+      "Vercel / Render",
+      "Chrome extensions / Linux",
+    ],
   },
 ];
 
@@ -205,11 +226,12 @@ export default function Home() {
             <a href="#work">Work</a>
             <a href="#approach">Approach</a>
             <a href="#toolkit">Toolkit</a>
+            <a href="#leetcode">Activity</a>
           </nav>
 
           <div className="nav-actions">
             <ThemeToggle />
-            <a className="nav-cta" href="#contact">
+            <a className="nav-cta" href="#page-end">
               Let&apos;s talk <ArrowIcon />
             </a>
           </div>
@@ -258,7 +280,7 @@ export default function Home() {
         <section className="capability-rail" aria-label="Engineering focus">
           <div><span>01</span><strong>Full-stack</strong><p>React · Next.js · Node.js</p></div>
           <div><span>02</span><strong>AI &amp; NLP</strong><p>ML · semantic search · NLP</p></div>
-          <div><span>03</span><strong>Data &amp; realtime</strong><p>PostgreSQL · Firebase · WebSockets</p></div>
+          <div><span>03</span><strong>Data &amp; realtime</strong><p>PostgreSQL · MongoDB · Firebase</p></div>
         </section>
 
         <section className="work section-shell" id="work">
@@ -375,9 +397,23 @@ export default function Home() {
           </div>
         </section>
 
+        <section className="leetcode section-shell" id="leetcode">
+          <div className="section-intro reveal-on-scroll">
+            <p className="kicker">04 / Coding activity</p>
+            <h2>Consistency,<br />made visible.</h2>
+            <p className="section-lede">
+              Live problem-solving activity from LeetCode—covering difficulty,
+              momentum, and the recent work behind the numbers.
+            </p>
+          </div>
+          <Suspense fallback={<LeetCodeActivitySkeleton />}>
+            <LeetCodeActivity />
+          </Suspense>
+        </section>
+
         <section className="profile section-shell" id="profile">
           <div className="profile-heading reveal-on-scroll">
-            <p className="kicker">04 / Profile</p>
+            <p className="kicker">05 / Profile</p>
             <h2>Student by chapter.<br /><span>Builder by practice.</span></h2>
           </div>
           <div className="profile-copy reveal-on-scroll">
@@ -387,12 +423,12 @@ export default function Home() {
               machine learning and NLP to turn ideas into deployment-ready products.
             </p>
             <p>
-              Alongside independently shipping three projects, I&apos;ve solved more
-              than 150 LeetCode problems and participated in the internal round of
+              Alongside independently shipping three projects, I&apos;ve solved 165
+              LeetCode problems and participated in the internal round of
               Smart India Hackathon 2024 at Manipal University Jaipur.
             </p>
             <div className="profile-facts" aria-label="Education and achievements">
-              <div><strong>150+</strong><span>LeetCode problems solved</span></div>
+              <div><strong>165</strong><span>LeetCode problems solved</span></div>
               <div><strong>03</strong><span>End-to-end projects shipped</span></div>
               <div><strong>2023–Present</strong><span>B.Tech CSE (AI &amp; ML)</span></div>
             </div>
@@ -407,7 +443,7 @@ export default function Home() {
 
         <section className="contact" id="contact">
           <div className="contact-shell reveal-on-scroll">
-            <p className="kicker">05 / Start a conversation</p>
+            <p className="kicker">06 / Start a conversation</p>
             <h2>Have an idea worth building?</h2>
             <a href="mailto:aaryangupta2005@gmail.com">
               Let&apos;s create something
@@ -422,7 +458,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer>
+      <footer id="page-end">
         <div className="footer-shell">
           <a className="brand" href="#top" aria-label="Back to top">
             <span className="brand-symbol">AG</span>

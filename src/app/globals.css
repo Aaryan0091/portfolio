@@ -22,6 +22,12 @@
   --dark-copy: #aeb7b0;
   --dark-line: rgba(249, 251, 248, 0.25);
   --reveal-ghost: rgba(17, 20, 18, 0.16);
+  --leetcode-surface: #fbfaf7;
+  --leetcode-surface-muted: #efeee9;
+  --leetcode-easy: #00a88f;
+  --leetcode-medium: #c98800;
+  --leetcode-hard: #e5485d;
+  --leetcode-empty: #e5e4df;
   --page-padding: clamp(1.25rem, 4vw, 4.5rem);
   --content-width: 1440px;
   --nav-height: 5.25rem;
@@ -52,6 +58,12 @@
   --dark-copy: #b5c0b8;
   --dark-line: rgba(238, 244, 239, 0.22);
   --reveal-ghost: rgba(17, 20, 18, 0.23);
+  --leetcode-surface: #1a211d;
+  --leetcode-surface-muted: #222b25;
+  --leetcode-easy: #00b8a3;
+  --leetcode-medium: #ffc01e;
+  --leetcode-hard: #ff375f;
+  --leetcode-empty: #303a33;
 }
 
 * {
@@ -481,6 +493,7 @@ nav a:hover::after,
 .evaluation-visual,
 .text-reveal,
 .reason-core,
+.contact,
 footer {
   --paper: #fbfaf7;
   --ink: #111412;
@@ -492,6 +505,7 @@ footer {
   --grid-line: rgba(17, 20, 18, 0.065);
   --grid-line-strong: rgba(17, 20, 18, 0.13);
   --reveal-ghost: rgba(17, 20, 18, 0.19);
+  color: var(--ink);
 }
 
 .text-link {
@@ -689,6 +703,7 @@ footer {
 
 .work,
 .toolkit,
+.leetcode,
 .profile {
   padding: clamp(6rem, 10vw, 10rem) var(--page-padding);
 }
@@ -1451,6 +1466,352 @@ footer {
   line-height: 1.6;
 }
 
+.leetcode {
+  border-top: 1px solid var(--ink);
+}
+
+.leetcode-panel {
+  position: relative;
+  display: grid;
+  overflow: hidden;
+  grid-template-columns: minmax(17rem, 0.72fr) minmax(0, 1.28fr);
+  border: 1px solid var(--line-strong);
+  border-radius: 0.75rem;
+  background: var(--leetcode-surface);
+  box-shadow: 0 0.75rem 2rem color-mix(in srgb, var(--shadow-solid) 9%, transparent);
+}
+
+.leetcode-panel-header {
+  display: flex;
+  min-height: 3.25rem;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0.7rem 0.6rem 1rem;
+  border-bottom: 1px solid var(--line);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.65rem;
+}
+
+.leetcode-panel-header > div {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.leetcode-overview {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(7rem, 1fr);
+  align-content: start;
+  align-items: center;
+  gap: 1.25rem;
+  padding: clamp(1.25rem, 2.5vw, 2rem);
+  border-right: 1px solid var(--line);
+}
+
+.activity-heading,
+.difficulty-item,
+.leetcode-mini-stats,
+.recent-submissions a {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+.leetcode-refresh-note {
+  color: var(--ink-faint);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.live-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--ink-soft);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.live-indicator i {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--ink-faint);
+}
+
+.live-indicator.is-live i {
+  background: var(--leetcode-easy);
+  box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--leetcode-easy) 15%, transparent);
+}
+
+.leetcode-solved-ring {
+  display: grid;
+  width: 8.5rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.leetcode-solved-ring > div {
+  display: grid;
+  width: 6.55rem;
+  aspect-ratio: 1;
+  place-content: center;
+  border-radius: 50%;
+  background: var(--leetcode-surface);
+  text-align: center;
+}
+
+.leetcode-solved-ring strong {
+  font-size: 1.9rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.06em;
+  line-height: 1;
+}
+
+.leetcode-solved-ring span {
+  margin-top: 0.3rem;
+  color: var(--ink-faint);
+  font-size: 0.67rem;
+}
+
+.difficulty-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.difficulty-item {
+  display: grid;
+  min-height: 2.2rem;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 0.35rem;
+  background: var(--leetcode-surface-muted);
+  color: var(--ink-soft);
+  font-size: 0.63rem;
+}
+
+.difficulty-easy span { color: var(--leetcode-easy); }
+.difficulty-medium span { color: var(--leetcode-medium); }
+.difficulty-hard span { color: var(--leetcode-hard); }
+
+.difficulty-item strong {
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.leetcode-mini-stats {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 0.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.leetcode-mini-stats > div {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.leetcode-mini-stats > div + div {
+  padding-left: 1rem;
+  border-left: 1px solid var(--line);
+}
+
+.leetcode-mini-stats span {
+  color: var(--ink-faint);
+  font-size: 0.56rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.leetcode-mini-stats strong {
+  font-family: Inter, ui-sans-serif, sans-serif;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
+.leetcode-mini-stats small {
+  font-size: 0.62em;
+  font-weight: 500;
+}
+
+.leetcode-detail {
+  display: grid;
+  align-content: start;
+  padding: clamp(1.25rem, 2.5vw, 2rem);
+}
+
+.activity-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 2rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.activity-heading > div:first-child {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.activity-heading span,
+.recent-label {
+  color: var(--ink-faint);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.activity-heading strong {
+  font-family: Inter, ui-sans-serif, sans-serif;
+  font-size: 0.9rem;
+}
+
+.activity-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.activity-legend i,
+.activity-cell {
+  border: 1px solid color-mix(in srgb, var(--ink) 13%, transparent);
+  border-radius: 0.16rem;
+}
+
+.activity-legend i {
+  width: 0.65rem;
+  height: 0.65rem;
+}
+
+.activity-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: repeat(12, 0.72rem);
+  grid-template-rows: repeat(7, 0.72rem);
+  gap: 0.22rem;
+  justify-content: start;
+  margin-block: 1rem 1.25rem;
+}
+
+.activity-cell {
+  aspect-ratio: 1;
+  min-width: 0;
+}
+
+.level-0 { background: var(--leetcode-empty); }
+.level-1 { background: color-mix(in srgb, var(--leetcode-easy) 30%, var(--leetcode-surface)); }
+.level-2 { background: color-mix(in srgb, var(--leetcode-easy) 52%, var(--leetcode-surface)); }
+.level-3 { background: color-mix(in srgb, var(--leetcode-easy) 75%, var(--leetcode-surface)); }
+.level-4 { background: var(--leetcode-easy); }
+
+.activity-cell[role="img"] {
+  cursor: help;
+}
+
+.recent-submissions {
+  display: grid;
+  grid-template-columns: minmax(6rem, 0.24fr) 1fr;
+  gap: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--line-strong);
+}
+
+.recent-label {
+  padding-top: 0.65rem;
+}
+
+.recent-submissions > div {
+  display: grid;
+}
+
+.recent-submissions a {
+  display: grid;
+  min-height: 2.6rem;
+  grid-template-columns: 2rem minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.66rem;
+  transition: color 200ms ease, padding-left 220ms var(--ease-out);
+}
+
+.recent-submissions a:hover {
+  padding-left: 0.3rem;
+  color: var(--leetcode-easy);
+}
+
+.recent-submissions a > span,
+.recent-submissions a small {
+  color: var(--ink-faint);
+}
+
+.recent-submissions a strong {
+  overflow: hidden;
+  font-family: Inter, ui-sans-serif, sans-serif;
+  font-size: 0.74rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leetcode-profile-link {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  gap: 0.35rem;
+  padding-inline: 0.65rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.35rem;
+  color: var(--ink-soft);
+  font-size: 0.65rem;
+  font-weight: 700;
+  transition: border-color 180ms ease, color 180ms ease, background-color 180ms ease;
+}
+
+.leetcode-profile-link svg {
+  transition: transform 220ms var(--ease-out);
+}
+
+.leetcode-profile-link:hover svg {
+  transform: translate(0.12rem, -0.12rem);
+}
+
+.leetcode-profile-link:hover {
+  border-color: var(--leetcode-easy);
+  background: var(--leetcode-surface-muted);
+  color: var(--ink);
+}
+
+.leetcode-skeleton {
+  min-height: 25rem;
+  grid-template-columns: 0.72fr 1.28fr;
+  padding: 2rem;
+  gap: 2rem;
+}
+
+.skeleton-block {
+  border-radius: 0.25rem;
+  background: linear-gradient(100deg, var(--line) 30%, var(--paper) 50%, var(--line) 70%);
+  background-size: 240% 100%;
+  animation: skeleton-shimmer 1.4s infinite linear;
+}
+
+@keyframes skeleton-shimmer {
+  to { background-position-x: -240%; }
+}
+
 .profile {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(20rem, 0.85fr);
@@ -1824,6 +2185,20 @@ footer {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .leetcode-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .leetcode-overview {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .leetcode-skeleton {
+    min-height: 32rem;
+    grid-template-columns: 1fr;
+  }
+
   .profile-copy {
     max-width: 40rem;
   }
@@ -1984,6 +2359,73 @@ footer {
   .principles-grid,
   .toolkit-grid {
     grid-template-columns: 1fr;
+  }
+
+  .leetcode-panel {
+    border-radius: 0.6rem;
+  }
+
+  .leetcode-overview {
+    grid-template-columns: 7rem minmax(0, 1fr);
+    gap: 0.9rem;
+    padding: 1rem;
+  }
+
+  .leetcode-solved-ring {
+    width: 7rem;
+  }
+
+  .leetcode-solved-ring > div {
+    width: 5.4rem;
+  }
+
+  .leetcode-solved-ring strong {
+    font-size: 1.55rem;
+  }
+
+  .leetcode-panel-header {
+    padding-left: 0.8rem;
+  }
+
+  .leetcode-refresh-note {
+    display: none;
+  }
+
+  .leetcode-detail {
+    padding: 1rem;
+  }
+
+  .activity-heading {
+    align-items: start;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .activity-grid {
+    grid-template-columns: repeat(12, 0.62rem);
+    grid-template-rows: repeat(7, 0.62rem);
+    gap: 0.18rem;
+  }
+
+  .recent-submissions {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .recent-submissions a {
+    grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+  }
+
+  .recent-submissions a small {
+    display: none;
+  }
+
+  .leetcode-mini-stats > div + div {
+    padding-left: 0.65rem;
+  }
+
+  .leetcode-skeleton {
+    min-height: 32rem;
   }
 
   .principles-grid article {
