@@ -1,4 +1,6 @@
 import { Suspense } from "react";
+import { InfiniteSlider } from "@/components/ui/infinite-slider";
+import { AboutAssistant } from "./_components/about-assistant";
 import { LeetCodeActivity, LeetCodeActivitySkeleton } from "./_components/leetcode-activity";
 import { TextReveal } from "./_components/text-reveal";
 import { ThemeToggle } from "./_components/theme-toggle";
@@ -108,6 +110,25 @@ const toolkit = [
       "Playwright / Postman",
       "Vercel / Render",
       "Chrome extensions / Linux",
+    ],
+  },
+];
+
+const skillRows = [
+  {
+    label: "Product stack",
+    skills: [
+      "React", "Next.js", "JavaScript", "TypeScript", "HTML", "CSS", "Node.js",
+      "Express.js", "REST APIs", "WebSockets", "PostgreSQL", "MongoDB", "Supabase",
+      "Firebase", "OAuth 2.0", "Chrome extensions",
+    ],
+  },
+  {
+    label: "Intelligence & delivery",
+    skills: [
+      "Python", "C++", "SQL", "Solidity", "Machine learning", "Deep learning", "NLP",
+      "TensorFlow", "scikit-learn", "Pandas", "NumPy", "spaCy", "NLTK", "Ethers.js",
+      "Git & GitHub", "Playwright", "Postman", "Vercel", "Render", "Linux",
     ],
   },
 ];
@@ -380,6 +401,29 @@ export default function Home() {
             ))}
           </div>
 
+          <div className="skill-marquee reveal-on-scroll" aria-label="Technology ecosystem">
+            <div className="skill-marquee-heading">
+              <p className="kicker">Technology ecosystem</p>
+              <p>Tools I use across product, data, intelligence, and delivery.</p>
+            </div>
+            {skillRows.map((row, rowIndex) => (
+              <div className="skill-marquee-track" key={row.label}>
+                <span>{row.label}</span>
+                <InfiniteSlider
+                  gap={10}
+                  duration={42 + rowIndex * 6}
+                  durationOnHover={90}
+                  reverse={rowIndex % 2 === 1}
+                  className="skill-marquee-slider"
+                >
+                  {row.skills.map((skill) => (
+                    <span className="skill-pill" key={skill}>{skill}</span>
+                  ))}
+                </InfiniteSlider>
+              </div>
+            ))}
+          </div>
+
           <div className="credentials-block reveal-on-scroll">
             <div className="credentials-heading">
               <p className="kicker">Coursework &amp; certifications</p>
@@ -402,8 +446,8 @@ export default function Home() {
             <p className="kicker">04 / Coding activity</p>
             <h2>Consistency,<br />made visible.</h2>
             <p className="section-lede">
-              Live problem-solving activity from LeetCode—covering difficulty,
-              momentum, and the recent work behind the numbers.
+              Live problem-solving totals and a full year of LeetCode practice,
+              mapped into a focused progress view.
             </p>
           </div>
           <Suspense fallback={<LeetCodeActivitySkeleton />}>
@@ -423,12 +467,12 @@ export default function Home() {
               machine learning and NLP to turn ideas into deployment-ready products.
             </p>
             <p>
-              Alongside independently shipping three projects, I&apos;ve solved 165
-              LeetCode problems and participated in the internal round of
-              Smart India Hackathon 2024 at Manipal University Jaipur.
+              Alongside independently shipping three projects, I maintain a consistent
+              LeetCode practice and participated in the internal round of Smart India
+              Hackathon 2024 at Manipal University Jaipur.
             </p>
             <div className="profile-facts" aria-label="Education and achievements">
-              <div><strong>165</strong><span>LeetCode problems solved</span></div>
+              <div><strong>Live</strong><span>LeetCode activity tracked above</span></div>
               <div><strong>03</strong><span>End-to-end projects shipped</span></div>
               <div><strong>2023–Present</strong><span>B.Tech CSE (AI &amp; ML)</span></div>
             </div>
@@ -456,6 +500,8 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        <AboutAssistant />
       </main>
 
       <footer id="page-end">
@@ -467,6 +513,7 @@ export default function Home() {
           <div className="footer-links">
             <a href="#top">Top</a>
             <a href="#work">Work</a>
+            <a href="#assistant-title">Ask</a>
             <a href="#contact">Contact</a>
           </div>
           <p>© 2026 Aaryan Gupta</p>
