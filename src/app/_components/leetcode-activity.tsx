@@ -23,7 +23,8 @@ const fallbackCounts = [
   3, 2, 9, 6, 2, 4, 5, 5, 4, 5, 2, 6, 5, 4, 3, 2, 8, 4, 3, 5, 3, 6,
   4, 5, 7, 14, 4, 3, 3, 5, 2, 2, 2, 4, 1, 2, 4, 3, 2, 2, 3, 3, 2, 3,
   2, 6, 9, 4, 3, 2, 2, 6, 4, 10, 3, 1, 5, 5, 2, 2, 1, 1, 4, 3, 3, 1,
-  3, 4, 1, 2, 1, 2, 2, 3, 5, 3, 1,
+  3, 4, 1, 2, 1, 2, 2, 3, 5, 3, 1, 3, 5, 1, 3, 4, 1, 1, 2, 1, 2, 2,
+  1, 2, 2, 2, 1, 2, 1, 1, 1, 2, 2, 3, 1,
 ];
 
 const fallbackCalendar = Object.fromEntries(
@@ -31,11 +32,11 @@ const fallbackCalendar = Object.fromEntries(
 );
 
 const fallbackStats = {
-  solved: 165,
+  solved: 172,
   difficulties: [
-    { difficulty: "Easy", count: 101 },
-    { difficulty: "Medium", count: 58 },
-    { difficulty: "Hard", count: 6 },
+    { difficulty: "Easy", count: 102 },
+    { difficulty: "Medium", count: 63 },
+    { difficulty: "Hard", count: 7 },
   ] satisfies DifficultyStat[],
 };
 
@@ -76,8 +77,14 @@ function formatDate(timestamp: number) {
   return new Intl.DateTimeFormat("en-IN", {
     month: "short",
     day: "numeric",
+    year: "numeric",
     timeZone: "UTC",
   }).format(new Date(timestamp * 1000));
+}
+
+function getTodayUtcTimestamp() {
+  const now = new Date();
+  return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) / 1000;
 }
 
 export function LeetCodeActivitySkeleton() {
@@ -96,6 +103,12 @@ export function LeetCodeActivity() {
     difficulties: fallbackStats.difficulties,
   });
   const [syncState, setSyncState] = useState<"loading" | "live" | "partial" | "retrying">("loading");
+  const [todayTimestamp, setTodayTimestamp] = useState<number | null>(null);
+  const [activityTooltip, setActivityTooltip] = useState<{
+    label: string;
+    x: number;
+    y: number;
+  } | null>(null);
 
   const refreshActivity = useCallback(async () => {
     try {
@@ -119,12 +132,20 @@ export function LeetCodeActivity() {
   }, []);
 
   useEffect(() => {
+    const todayTimer = window.setTimeout(() => setTodayTimestamp(getTodayUtcTimestamp()), 0);
     void refreshActivity();
-    const interval = window.setInterval(() => void refreshActivity(), REFRESH_INTERVAL);
-    const refreshOnFocus = () => void refreshActivity();
+    const interval = window.setInterval(() => {
+      setTodayTimestamp(getTodayUtcTimestamp());
+      void refreshActivity();
+    }, REFRESH_INTERVAL);
+    const refreshOnFocus = () => {
+      setTodayTimestamp(getTodayUtcTimestamp());
+      void refreshActivity();
+    };
     window.addEventListener("focus", refreshOnFocus);
 
     return () => {
+      window.clearTimeout(todayTimer);
       window.clearInterval(interval);
       window.removeEventListener("focus", refreshOnFocus);
     };
@@ -210,15 +231,25 @@ export function LeetCodeActivity() {
               </div>
               <div className="activity-grid">
                 {activityDays.map((day) => {
+                  const isFuture = todayTimestamp !== null && day.timestamp > todayTimestamp;
                   const label = `${formatDate(day.timestamp)}: ${day.count} ${day.count === 1 ? "submission" : "submissions"}`;
                   return (
                     <span
-                      className={`activity-cell level-${getActivityLevel(day.count)}`}
+                      className={`activity-cell level-${getActivityLevel(day.count)}${isFuture ? " is-future" : ""}`}
                       key={day.timestamp}
-                      aria-label={day.count > 0 ? label : undefined}
-                      aria-hidden={day.count === 0}
-                      role={day.count > 0 ? "img" : undefined}
-                      title={label}
+                      aria-label={day.count > 0 && !isFuture ? label : undefined}
+                      aria-hidden={day.count === 0 || isFuture}
+                      role={day.count > 0 && !isFuture ? "img" : undefined}
+                      onPointerEnter={day.count > 0 && !isFuture ? (event) => {
+                        const bounds = event.currentTarget.getBoundingClientRect();
+                        setActivityTooltip({
+                          label,
+                          x: Math.min(Math.max(bounds.left + bounds.width / 2, 110), window.innerWidth - 110),
+                          y: bounds.top,
+                        });
+                      } : undefined}
+                      onPointerLeave={day.count > 0 && !isFuture ? () => setActivityTooltip(null) : undefined}
+                      onPointerCancel={day.count > 0 && !isFuture ? () => setActivityTooltip(null) : undefined}
                     />
                   );
                 })}
@@ -226,6 +257,16 @@ export function LeetCodeActivity() {
             </div>
           </div>
         </div>
+
+        {activityTooltip ? (
+          <div
+            className="activity-tooltip"
+            role="tooltip"
+            style={{ left: activityTooltip.x, top: activityTooltip.y }}
+          >
+            {activityTooltip.label}
+          </div>
+        ) : null}
 
         <div className="calendar-footer">
           <span>

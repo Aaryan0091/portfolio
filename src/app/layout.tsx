@@ -1,5 +1,14 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+
+// Self-hosted type system (latin subset only). Loaded from node_modules, so the
+// site has no third-party font request and no flash of fallback metrics.
+import "@fontsource-variable/inter/wght.css";
+import "@fontsource-variable/archivo/wdth.css";
+import "@fontsource-variable/jetbrains-mono/wght.css";
+import "@fontsource/instrument-serif/latin-400.css";
+import "@fontsource/instrument-serif/latin-400-italic.css";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
