@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Suspense } from "react";
 import { InfiniteSlider } from "@/components/ui/infinite-slider";
 import { AboutAssistant } from "./_components/about-assistant";
@@ -252,6 +253,9 @@ export default function Home() {
 
           <div className="nav-actions">
             <ThemeToggle />
+            <Link className="new-ui-toggle" href="/new-ui">
+              New UI
+            </Link>
             <a className="nav-cta" href="#page-end">
               Let&apos;s talk <ArrowIcon />
             </a>
