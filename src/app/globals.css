@@ -41,6 +41,13 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-soft: cubic-bezier(0.33, 1, 0.68, 1);
 
+  /* The deep surface behind every dark page — New UI, Ask AI and the gallery.
+     Defined once here (and as RGB parts so it can be used with alpha) because
+     it was previously a near-black literal repeated in ~30 places, which made
+     it impossible to change the site's base colour in one edit. */
+  --dark-surface: #0a2226;
+  --dark-surface-rgb: 10, 34, 38;
+
   /* Type system — self-hosted via @fontsource, imported in layout.tsx */
   --font-sans: "Inter Variable", Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-display: "Archivo Variable", Archivo, "Helvetica Neue", Arial, sans-serif;
@@ -3617,16 +3624,44 @@ footer {
   }
 }
 
+/* The fixed header renders outside .new-ui-page (ScrollSmoother requirement),
+   so the New UI palette has to live on a wrapper that contains both. */
+.new-ui-root,
 .new-ui-page {
   --new-ui-accent: #7dd3fc;
   --new-ui-accent-strong: #38bdf8;
   --new-ui-accent-rgb: 125, 211, 252;
   --new-ui-accent-ink: #062a3a;
 
+  /* Shared breathing room above every New UI section's heading, and the
+     heading scale itself. Single source of truth so the rhythm stays
+     consistent across the page instead of drifting per section. */
+  --new-ui-section-top: clamp(5rem, 11vw, 10rem);
+  --new-ui-heading-size: clamp(3.25rem, 8vw, 6.5rem);
+  --new-ui-heading-gap: 4rem;
+}
+
+/* ScrollSmoother makes #smooth-wrapper `position: fixed`, which lifts the page
+   off the document background. Without this the light global body colour shows
+   through during refreshes and overscroll. */
+.new-ui-root {
+  background: var(--dark-surface);
+}
+
+#smooth-wrapper {
+  overflow: hidden;
+  background: var(--dark-surface);
+}
+
+#smooth-content {
+  will-change: transform;
+}
+
+.new-ui-page {
   position: relative;
   min-height: 100svh;
   padding-top: var(--nav-height);
-  background: #06090a;
+  background: var(--dark-surface);
   color: #f4faf7;
 }
 
@@ -3654,7 +3689,7 @@ footer {
 }
 
 .new-ui-header-revealed {
-  background: rgba(6, 9, 10, 0.5);
+  background: rgba(var(--dark-surface-rgb), 0.5);
   backdrop-filter: blur(14px) saturate(130%);
 }
 
@@ -3729,7 +3764,7 @@ footer {
 .new-ui-hero-video-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(6, 9, 10, 0.55), rgba(6, 9, 10, 0.75) 60%, #06090a);
+  background: linear-gradient(180deg, rgba(var(--dark-surface-rgb), 0.55), rgba(var(--dark-surface-rgb), 0.75) 60%, var(--dark-surface));
 }
 
 .new-ui-glow {
@@ -3878,7 +3913,7 @@ footer {
 
 .new-ui-secondary:hover {
   background: #f4faf7;
-  color: #06090a;
+  color: var(--dark-surface);
   transform: translateY(-2px);
 }
 
@@ -3889,11 +3924,10 @@ footer {
   place-items: center;
   justify-self: end;
   align-self: end;
-  width: min(100%, 320px);
-  aspect-ratio: 4 / 5;
-  border: 1px solid rgba(244, 250, 247, 0.18);
+  width: min(100%, 540px);
+  aspect-ratio: 16 / 9;
   border-radius: 1.25rem;
-  background: linear-gradient(160deg, rgba(var(--new-ui-accent-rgb), 0.14), rgba(6, 9, 10, 0.6));
+  background: linear-gradient(160deg, rgba(var(--new-ui-accent-rgb), 0.14), rgba(var(--dark-surface-rgb), 0.6));
   overflow: hidden;
 }
 
@@ -3911,28 +3945,42 @@ footer {
   color: rgba(244, 250, 247, 0.85);
 }
 
-.new-ui-about,
+.new-ui-about {
+  position: relative;
+  z-index: 1;
+  /* Generous top padding does double duty: it gives the hero video room to
+     breathe before the About content starts, and it widens the document gap
+     between the hero card and the About card — which is what raises the
+     ceiling on the portrait flight's scroll range. See portrait-scroll-link. */
+  padding: var(--new-ui-section-top) clamp(1.5rem, 6vw, 5rem) 16rem;
+}
+
 .new-ui-awards {
   position: relative;
   z-index: 1;
-  padding: 2rem clamp(1.5rem, 6vw, 5rem) 6rem;
+  background: var(--dark-surface);
+  padding: var(--new-ui-section-top) clamp(1.5rem, 6vw, 5rem) 6rem;
 }
 
 .new-ui-about-heading {
   font-family: var(--font-serif);
   font-style: italic;
   text-align: center;
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-size: var(--new-ui-heading-size);
   color: #f4faf7;
-  margin-bottom: 2.5rem;
+  margin-bottom: var(--new-ui-heading-gap);
 }
 
 .new-ui-about-grid {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr) 280px;
-  gap: 1.5rem;
+  /* Proportional rather than fixed side columns. With fixed 260px sides the
+     centre card got squeezed to 300px at 1024px wide — widening the sides
+     stole from the middle. Ratios let all three scale together, and
+     .new-ui-about-main's max-width still caps the centre on wide screens. */
+  grid-template-columns: minmax(0, 0.62fr) minmax(0, 1.4fr) minmax(0, 0.62fr);
+  gap: 2rem;
   align-items: start;
-  max-width: 1200px;
+  max-width: 1320px;
   margin-inline: auto;
 }
 
@@ -3940,7 +3988,7 @@ footer {
 .new-ui-stat-card {
   border: 1px solid rgba(244, 250, 247, 0.14);
   border-radius: 1rem;
-  background: linear-gradient(160deg, rgba(var(--new-ui-accent-rgb), 0.08), rgba(6, 9, 10, 0.6));
+  background: linear-gradient(160deg, rgba(var(--new-ui-accent-rgb), 0.08), rgba(var(--dark-surface-rgb), 0.6));
   padding: 1.5rem;
 }
 
@@ -3962,7 +4010,7 @@ footer {
   height: 64px;
   border: 1px solid rgba(244, 250, 247, 0.14);
   border-radius: 0.75rem;
-  background: rgba(6, 9, 10, 0.5);
+  background: rgba(var(--dark-surface-rgb), 0.5);
   font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 700;
@@ -3971,17 +4019,22 @@ footer {
 }
 
 .new-ui-about-main {
+  max-width: 540px;
+  /* The centre grid column is `1fr`, so on wide viewports it grows well past
+     this card's 460px cap — without this the card sits flush to the column's
+     left edge and reads as ~186px off-centre at 1600px wide. */
+  margin-inline: auto;
   border: 1px solid rgba(244, 250, 247, 0.14);
   border-radius: 1.25rem;
   overflow: hidden;
-  background: rgba(6, 9, 10, 0.4);
+  background: rgba(var(--dark-surface-rgb), 0.4);
 }
 
 .new-ui-about-portrait {
   position: relative;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  background: linear-gradient(160deg, rgba(var(--new-ui-accent-rgb), 0.16), rgba(6, 9, 10, 0.7));
+  background: linear-gradient(160deg, rgba(var(--new-ui-accent-rgb), 0.16), rgba(var(--dark-surface-rgb), 0.7));
   display: grid;
   place-items: center;
 }
@@ -4041,6 +4094,12 @@ footer {
   gap: 1.5rem;
   max-width: 1200px;
   margin-inline: auto;
+  /* The pinned sequence translates this block up over the heading to centre it
+     (see awards-pin-sequence.tsx). A transform does not shrink the layout box,
+     so without this the section would keep a hole the height of that lift.
+     --awards-lift is published by the animation and is 0 when it is not
+     running, which keeps reduced-motion and mobile on the untouched layout. */
+  margin-bottom: calc(-1 * var(--awards-lift, 0px));
 }
 
 .new-ui-awards-intro {
@@ -4056,7 +4115,7 @@ footer {
   gap: 2rem;
   border: 1px solid rgba(244, 250, 247, 0.14);
   border-radius: 1.25rem;
-  background: linear-gradient(160deg, rgba(var(--new-ui-accent-rgb), 0.08), rgba(6, 9, 10, 0.75));
+  background: linear-gradient(160deg, rgba(var(--new-ui-accent-rgb), 0.08), rgba(var(--dark-surface-rgb), 0.75));
   padding: 2rem;
 }
 
@@ -4104,7 +4163,7 @@ footer {
   overflow: hidden;
   border: 1px solid rgba(244, 250, 247, 0.18);
   border-radius: 1.25rem;
-  background: linear-gradient(160deg, rgba(var(--new-ui-accent-rgb), 0.14), rgba(6, 9, 10, 0.6));
+  background: linear-gradient(160deg, rgba(var(--new-ui-accent-rgb), 0.14), rgba(var(--dark-surface-rgb), 0.6));
   display: grid;
   place-items: center;
 }
@@ -4127,16 +4186,17 @@ footer {
 .new-ui-services {
   position: relative;
   z-index: 1;
-  padding: 2rem clamp(1.5rem, 6vw, 5rem) 8rem;
+  background: var(--dark-surface);
+  padding: var(--new-ui-section-top) clamp(1.5rem, 6vw, 5rem) 8rem;
 }
 
 .new-ui-services-heading {
   font-family: var(--font-serif);
   font-style: italic;
   text-align: center;
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-size: var(--new-ui-heading-size);
   color: rgba(244, 250, 247, 0.45);
-  margin-bottom: 3rem;
+  margin-bottom: var(--new-ui-heading-gap);
 }
 
 .new-ui-services-list {
@@ -4174,7 +4234,7 @@ footer {
 .new-ui-work {
   position: relative;
   z-index: 1;
-  padding: 4rem clamp(1.5rem, 6vw, 5rem) 8rem;
+  padding: var(--new-ui-section-top) clamp(1.5rem, 6vw, 5rem) 8rem;
 }
 
 .new-ui-work-steps {
@@ -4237,7 +4297,7 @@ footer {
 .new-ui-featured {
   position: relative;
   z-index: 1;
-  padding: 4rem clamp(1.5rem, 6vw, 5rem) 8rem;
+  padding: var(--new-ui-section-top) clamp(1.5rem, 6vw, 5rem) 8rem;
   max-width: 1200px;
   margin-inline: auto;
 }
@@ -4251,7 +4311,7 @@ footer {
 }
 
 .new-ui-featured-heading {
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-size: var(--new-ui-heading-size);
   line-height: 1.05;
 }
 
@@ -4297,7 +4357,7 @@ footer {
   border: 1px solid rgba(244, 250, 247, 0.14);
   border-radius: 1rem;
   overflow: hidden;
-  background: rgba(6, 9, 10, 0.5);
+  background: rgba(var(--dark-surface-rgb), 0.5);
   transition: transform 220ms var(--ease-out), border-color 220ms ease;
 }
 
@@ -4339,7 +4399,7 @@ footer {
 .new-ui-insights {
   position: relative;
   z-index: 1;
-  padding: 4rem clamp(1.5rem, 6vw, 5rem) 8rem;
+  padding: var(--new-ui-section-top) clamp(1.5rem, 6vw, 5rem) 8rem;
 }
 
 .new-ui-insights-body {
@@ -4365,7 +4425,7 @@ footer {
   gap: 0.5rem;
   border: 1px solid rgba(244, 250, 247, 0.14);
   border-radius: 1rem;
-  background: rgba(6, 9, 10, 0.5);
+  background: rgba(var(--dark-surface-rgb), 0.5);
 }
 
 .new-ui-insight-glow {
@@ -4413,7 +4473,7 @@ footer {
   padding: 1.75rem;
   border: 1px solid rgba(244, 250, 247, 0.14);
   border-radius: 1.25rem;
-  background: linear-gradient(165deg, rgba(var(--new-ui-accent-rgb), 0.3), rgba(6, 9, 10, 0.85));
+  background: linear-gradient(165deg, rgba(var(--new-ui-accent-rgb), 0.3), rgba(var(--dark-surface-rgb), 0.85));
 }
 
 .new-ui-service-top {
@@ -4658,7 +4718,7 @@ footer {
   height: 2.1rem;
   border-radius: 0.5rem;
   background: #f4faf7;
-  color: #06090a;
+  color: var(--dark-surface);
   font-family: var(--font-mono);
   font-size: 0.72rem;
   font-weight: 700;
@@ -4735,7 +4795,7 @@ footer {
 .legal-page {
   min-height: 100svh;
   padding: 2.5rem clamp(1.5rem, 6vw, 5rem) 6rem;
-  background: #06090a;
+  background: var(--dark-surface);
   color: #f4faf7;
 }
 
@@ -4855,9 +4915,49 @@ footer {
 
   display: flow-root;
   min-height: 100svh;
-  background: #06090a;
+  background: var(--dark-surface);
   color: #f4faf7;
   padding-bottom: 4rem;
+  animation: ask-ai-page-enter 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes ask-ai-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ask-ai-page {
+    animation: none;
+  }
+}
+
+.ask-ai-persistent-back {
+  position: fixed;
+  top: 1.25rem;
+  left: 1.25rem;
+  z-index: 45;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(244, 250, 247, 0.2);
+  background: rgba(var(--dark-surface-rgb), 0.6);
+  backdrop-filter: blur(10px);
+  color: #f4faf7;
+  font-size: 0.82rem;
+  font-weight: 700;
+  transition: border-color 220ms ease, background 220ms ease, transform 220ms ease;
+}
+
+.ask-ai-persistent-back:hover {
+  border-color: rgba(125, 211, 252, 0.6);
+  background: rgba(var(--dark-surface-rgb), 0.8);
+  transform: translateY(-1px);
 }
 
 .ask-ai-page .about-assistant {
@@ -4983,7 +5083,7 @@ footer {
   align-items: center;
   gap: 1.25rem;
   padding: 1.25rem clamp(1.5rem, 6vw, 5rem);
-  background: rgba(6, 9, 10, 0.72);
+  background: rgba(var(--dark-surface-rgb), 0.72);
   backdrop-filter: blur(14px) saturate(130%);
   border-top: 1px solid rgba(244, 250, 247, 0.12);
   transform: translateY(100%);
@@ -5012,4 +5112,183 @@ footer {
 
 .ask-ai-footer-spacer {
   flex: 1;
+}
+
+/* ---------------------------------------------------------------------------
+   Interactive WebGL gallery (/gallery)
+
+   Layout adapted from the 3D Interactive Gallery by Arun Kumar Bind:
+   https://github.com/abx15/3d-interactive-gallery
+
+   The grid's <img> elements are deliberately invisible. They exist to be
+   measured (each plane tracks its image's bounding rect) and to supply the
+   texture source; three.js paints the actual pixels onto the canvas behind.
+--------------------------------------------------------------------------- */
+
+.gallery-page {
+  position: relative;
+  width: 100%;
+  height: 100svh;
+  overflow: hidden;
+  background: var(--dark-surface);
+  color: #f4faf7;
+}
+
+.gallery-stage {
+  position: absolute;
+  inset: 0;
+  cursor: grab;
+}
+
+.gallery-stage.is-dragging {
+  cursor: grabbing;
+}
+
+.gallery-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.gallery-grid {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.gallery-grid-col {
+  position: absolute;
+  top: 0;
+  width: 24rem;
+  max-width: 24rem;
+  height: 100%;
+  overflow: hidden;
+}
+
+.gallery-grid-figure {
+  position: absolute;
+  display: flex;
+  width: 24rem;
+  height: 30rem;
+  overflow: hidden;
+  user-select: none;
+}
+
+.gallery-grid-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+  /* Measured, never painted — three.js draws these. */
+  visibility: hidden;
+  opacity: 0;
+}
+
+.gallery-overlay {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem clamp(1.25rem, 4vw, 2.5rem);
+  pointer-events: none;
+}
+
+.gallery-overlay > * {
+  pointer-events: auto;
+}
+
+.gallery-overlay-top {
+  top: 0;
+  background: linear-gradient(to bottom, rgba(var(--dark-surface-rgb), 0.8), transparent);
+}
+
+.gallery-overlay-bottom {
+  bottom: 0;
+  justify-content: center;
+  background: linear-gradient(to top, rgba(var(--dark-surface-rgb), 0.85), transparent);
+}
+
+.gallery-back {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid rgba(244, 250, 247, 0.35);
+  border-radius: 999px;
+  background: rgba(var(--dark-surface-rgb), 0.55);
+  backdrop-filter: blur(10px);
+  color: #f4faf7;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: border-color 200ms ease, background 200ms ease;
+}
+
+.gallery-back:hover {
+  border-color: rgba(244, 250, 247, 0.7);
+  background: rgba(var(--dark-surface-rgb), 0.8);
+}
+
+.gallery-hint {
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(244, 250, 247, 0.55);
+}
+
+.gallery-credit {
+  font-size: 0.78rem;
+  color: rgba(244, 250, 247, 0.5);
+  text-align: center;
+}
+
+.gallery-credit a {
+  color: rgba(244, 250, 247, 0.8);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.gallery-credit a:hover {
+  color: #f4faf7;
+}
+
+@media (max-width: 860px) {
+  .gallery-grid-col {
+    width: 16rem;
+    max-width: 16rem;
+  }
+
+  .gallery-grid-figure {
+    width: 16rem;
+    height: 20rem;
+  }
+
+  .gallery-hint {
+    display: none;
+  }
+}
+
+.new-ui-gallery-link {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 2.5rem;
+  padding: 0.7rem 1.4rem;
+  border: 1px solid rgba(var(--new-ui-accent-rgb), 0.45);
+  border-radius: 999px;
+  color: var(--new-ui-accent);
+  font-size: 0.92rem;
+  font-weight: 600;
+  transition: border-color 220ms ease, background 220ms ease, transform 220ms var(--ease-out);
+}
+
+.new-ui-gallery-link:hover {
+  border-color: var(--new-ui-accent);
+  background: rgba(var(--new-ui-accent-rgb), 0.12);
+  transform: translateY(-2px);
 }

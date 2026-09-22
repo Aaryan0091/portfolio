@@ -2,10 +2,143 @@ import Link from "next/link";
 import { IdeaForm } from "./_components/idea-form";
 import { NewUiHeader } from "./_components/site-header";
 import { PortraitScrollLink } from "./_components/portrait-scroll-link";
+import { AwardsHeadingReveal } from "./_components/awards-heading-reveal";
+import { AwardsPinSequence } from "./_components/awards-pin-sequence";
+import { SmoothScroll } from "./_components/smooth-scroll";
+import { MotionPathReveal } from "./_components/motion-path-reveal";
+import { PathEditor } from "./_components/path-editor";
 
-const lineCount = 14;
+const lineCount = 5;
+
+/**
+ * Scroll-triggered entrances, one per section.
+ *
+ * Module-level so the array reference stays stable across renders — a fresh
+ * literal each render would retrigger MotionPathReveal's effect and rebuild
+ * every ScrollTrigger.
+ *
+ * Each `path` is a list of px offsets from where CSS already puts the element.
+ * The FIRST point is where it flies in from, the middle points bend the curve,
+ * and the LAST is always {x: 0, y: 0} so it settles into its real layout spot.
+ *
+ * Directions deliberately alternate — left, right, up — so six sections don't
+ * read as the same effect six times.
+ *
+ * These are all scroll-bound (MotionPathReveal defaults to `scrub: true`), so
+ * `start`/`end` — not `duration` — are what pace them. The pair defines the
+ * band of scrolling the flight is spread across: the elements are at their
+ * start position when the trigger's top hits `start`, fully landed when it
+ * hits `end`, and frozen wherever you stop in between.
+ *
+ * `trigger` is always the element that directly wraps the targets, never the
+ * whole <section>. A section's top can sit hundreds of px above its content,
+ * and triggering there burns the entire flight while the targets are still
+ * below the fold. That bug is why Featured Work triggers on its grid.
+ */
+const sectionReveals = [
+  // NOTE: Awards is absent on purpose. Its heading pins at the centre of the
+  // screen and its content rises underneath, which is a different shape of
+  // animation entirely — see awards-pin-sequence.tsx.
+  {
+    id: "services",
+    targets: ".new-ui-service-item",
+    trigger: ".new-ui-services-list",
+    path: [
+      { x: -150, y: 50 },
+      { x: -38, y: -14 },
+      { x: 0, y: 0 },
+    ],
+    start: "top 84%",
+    duration: 1.15,
+    stagger: 0.11,
+    curviness: 1.5,
+  },
+  {
+    id: "work-steps",
+    // Steps should feel sequential, so they rise straight up in order with a
+    // slightly longer gap between them than the other sections use.
+    targets: ".new-ui-step-card",
+    trigger: ".new-ui-work-steps",
+    path: [
+      { x: 0, y: 130 },
+      { x: 16, y: -30 },
+      { x: 0, y: 0 },
+    ],
+    start: "top 84%",
+    duration: 1.25,
+    stagger: 0.17,
+    curviness: 1.4,
+  },
+  {
+    id: "featured",
+    targets: ".new-ui-featured-card",
+    trigger: ".new-ui-featured-grid",
+    path: [
+      { x: 190, y: 64 },
+      { x: 58, y: -34 },
+      { x: 0, y: 0 },
+    ],
+    start: "top 88%",
+    duration: 1.25,
+    stagger: 0.14,
+    curviness: 1.6,
+  },
+  {
+    id: "insights",
+    targets: ".new-ui-insight-card",
+    trigger: ".new-ui-insights-grid",
+    path: [
+      { x: 150, y: 60 },
+      { x: 36, y: -18 },
+      { x: 0, y: 0 },
+    ],
+    start: "top 84%",
+    duration: 1.2,
+    stagger: 0.12,
+    curviness: 1.5,
+  },
+  {
+    id: "contact",
+    // Only the contact cards, not the form — animating inputs that someone may
+    // be about to click is a good way to make a form feel broken.
+    targets: ".new-ui-contact-card",
+    trigger: ".new-ui-contact-cards",
+    path: [
+      { x: 0, y: 80 },
+      { x: 0, y: -18 },
+      { x: 0, y: 0 },
+    ],
+    start: "top 88%",
+    duration: 1.1,
+    stagger: 0.14,
+    curviness: 1.3,
+  },
+];
 
 export default function NewUI() {
+  return (
+    <div className="new-ui-root">
+      {/* Fixed-position elements live outside #smooth-content — a transformed
+          ancestor would otherwise become their containing block and drag them
+          up the page along with the content. */}
+      <NewUiHeader />
+
+      <SmoothScroll>
+        <NewUiBody />
+      </SmoothScroll>
+
+      <PortraitScrollLink />
+      <AwardsHeadingReveal />
+      <AwardsPinSequence />
+      {sectionReveals.map((config) => (
+        <MotionPathReveal key={config.id} {...config} />
+      ))}
+      <PathEditor />
+    </div>
+  );
+}
+
+function NewUiBody() {
   return (
     <main className="new-ui-page">
       <div className="new-ui-backdrop" aria-hidden="true">
@@ -28,8 +161,6 @@ export default function NewUI() {
           ))}
         </div>
       </div>
-
-      <NewUiHeader />
 
       <section className="new-ui-hero">
         <div className="new-ui-hero-video" aria-hidden="true">
@@ -109,7 +240,7 @@ export default function NewUI() {
       </section>
 
       <section className="new-ui-awards" id="awards">
-        <h2 className="new-ui-about-heading">Awards &amp; Experiences</h2>
+        <h2 className="new-ui-about-heading new-ui-awards-heading">Awards &amp; Experiences</h2>
 
         <div className="new-ui-awards-layout">
           <p className="new-ui-awards-intro">
@@ -172,7 +303,9 @@ export default function NewUI() {
       </section>
 
       <section className="new-ui-services" id="services">
-        <h2 className="new-ui-services-heading">Services I Offer</h2>
+        <h2 className="new-ui-services-heading new-ui-services-main-heading">
+          Services I Offer
+        </h2>
 
         <div className="new-ui-services-list">
           {[
@@ -277,6 +410,10 @@ export default function NewUI() {
             </a>
           ))}
         </div>
+
+        <Link className="new-ui-gallery-link" href="/gallery">
+          Open the interactive WebGL gallery →
+        </Link>
       </section>
 
       <section className="new-ui-insights" id="insights">
@@ -403,7 +540,6 @@ export default function NewUI() {
         </div>
       </footer>
 
-      <PortraitScrollLink />
     </main>
   );
 }
