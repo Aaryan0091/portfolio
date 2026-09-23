@@ -29,10 +29,10 @@ import { MotionPathPlugin } from "gsap/MotionPathPlugin";
  * Checkpoints, as fractions of the scroll range below:
  *
  *     0%  ── card sits in the hero, full size
- *    25%  ── one third of the way along the arc
+ *    25%  ── one quarter of the way along the arc
  *    50%  ── half way, at the arc's widest point
- *    75%  ── arrived and resized; crossfade begins  (TRAVEL_END)
- *   100%  ── handover complete, it is now the About card
+ *    75%  ── three quarters of the way to the destination
+ *   100%  ── lands exactly and immediately becomes the crisp About card
  *
  * The two cards sit ~430px apart — comfortably inside one viewport — so the
  * whole flight stays on screen.
@@ -46,13 +46,6 @@ import { MotionPathPlugin } from "gsap/MotionPathPlugin";
  * drifting briefly after the wheel stops. That is the page scrolling, not the
  * timeline running on its own. Lower `smooth` there to tighten it further.
  */
-
-/**
- * Fraction of the scroll range spent travelling. The remainder is the
- * crossfade. Both are expressed against the timeline below so the checkpoints
- * in the comment stay accurate if this is changed.
- */
-const TRAVEL_END = 0.75;
 
 /**
  * The band of scrolling the whole journey is spread across.
@@ -105,8 +98,8 @@ const TARGET_DRIFT = 0.25;
  * fraction of viewport height. Viewport-relative rather than a fixed pixel
  * count so short laptop screens do not push the handover off the top.
  */
-const MIN_LANDING_Y_RATIO = 0.28;
-const MIN_LANDING_Y_FLOOR = 140;
+const MIN_LANDING_Y_RATIO = 0.34;
+const MIN_LANDING_Y_FLOOR = 160;
 
 /**
  * How much of the horizontal travel is spent in the first third of the flight.
@@ -125,11 +118,8 @@ const MIN_LANDING_Y_FLOOR = 140;
 const X_LEAD = 0.55;
 
 // Internal timeline length. Under a scrub this sets proportions, not speed —
-// the scroll range does the pacing. Splitting it by TRAVEL_END keeps the
-// timeline and the documented checkpoints in lockstep.
+// the scroll range does the pacing.
 const flightDuration = 1.5;
-const travelDuration = flightDuration * TRAVEL_END;
-const crossfadeDuration = flightDuration - travelDuration;
 
 export function PortraitScrollLink() {
   useEffect(() => {
@@ -144,8 +134,14 @@ export function PortraitScrollLink() {
 
     const heroPortrait = document.querySelector<HTMLElement>(".new-ui-portrait");
     const aboutPortrait = document.querySelector<HTMLElement>(".new-ui-about-portrait");
+    const heroMark = heroPortrait?.querySelector<HTMLElement>(
+      ".new-ui-portrait-mark"
+    );
+    const aboutMark = aboutPortrait?.querySelector<HTMLElement>(
+      ".new-ui-portrait-mark"
+    );
 
-    if (!heroPortrait || !aboutPortrait) return;
+    if (!heroPortrait || !aboutPortrait || !heroMark || !aboutMark) return;
 
     const mm = gsap.matchMedia();
 
@@ -160,27 +156,27 @@ export function PortraitScrollLink() {
       const dy =
         endRect.top + endRect.height / 2 - (startRect.top + startRect.height / 2);
       const scale = endRect.width / startRect.width;
+      const startMarkRect = heroMark.getBoundingClientRect();
+      const endMarkRect = aboutMark.getBoundingClientRect();
+
+      // The mark inherits the card's scale. Counter-scale it just enough that
+      // its final apparent size matches the smaller static About mark exactly.
+      const markScale = endMarkRect.width / (startMarkRect.width * scale);
 
       // Derive the scroll range from the measured geometry — see the note at
       // the top of this file for why this cannot be a fixed number.
       const gap = Math.abs(dy);
       const aboutDocY = endRect.top + window.scrollY;
-      const idealRange = gap / ((1 - TARGET_DRIFT) * TRAVEL_END);
+      const idealRange = gap / (1 - TARGET_DRIFT);
 
-      // The card ARRIVES at TRAVEL_END (75%) of the range, not at 100% — the
-      // last quarter is the crossfade, by which point it is already sitting on
-      // the destination. So the ceiling has to be solved against the arrival
-      // scroll position, `rangeLength * TRAVEL_END`, not the full range.
-      //
-      // Getting this wrong over-constrained the range badly: it clamped the
-      // range far below what TARGET_DRIFT wanted (collapsing the drift toward
-      // "pinned"), while the position it was protecting was one the card had
-      // already passed hundreds of pixels earlier.
+      // The card now arrives at 100% of the range and hands over immediately.
+      // Ending there removes the former extra quarter-scroll and prevents two
+      // differently sized AG labels from crossfading into a blurry endpoint.
       const minLandingY = Math.max(
         MIN_LANDING_Y_FLOOR,
         window.innerHeight * MIN_LANDING_Y_RATIO
       );
-      const ceiling = (aboutDocY - minLandingY) / TRAVEL_END;
+      const ceiling = aboutDocY - minLandingY;
       const rangeLength = Math.round(Math.max(240, Math.min(idealRange, ceiling)));
 
       // Four waypoints, spaced EVENLY in y (0, ⅓, ⅔, 1).
@@ -215,6 +211,10 @@ export function PortraitScrollLink() {
         zIndex: 30,
         willChange: "transform, opacity",
       });
+      gsap.set(heroMark, {
+        transformOrigin: "center center",
+        willChange: "transform",
+      });
       gsap.set(aboutPortrait, { opacity: 0 });
 
       const tl = gsap.timeline({
@@ -237,32 +237,28 @@ export function PortraitScrollLink() {
           // dead spot. 1.0 keeps the path smooth without bunching it.
           motionPath: { path: flightPath, curviness: 1, autoRotate: false },
           scale,
-          duration: travelDuration,
+          duration: flightDuration,
           // Linear so scroll distance maps 1:1 onto journey distance. Any
           // in/out curve here breaks the checkpoints documented above.
           ease: "none",
         },
         0
       )
-        // By now the travelling card sits exactly on top of the destination at
-        // exactly its size, so the handover is invisible — it just becomes the
-        // About card. Given its own quarter of the scroll range rather than a
-        // quick swap, so there are visible in-between steps as it settles.
         .to(
-          heroPortrait,
-          { opacity: 0, duration: crossfadeDuration, ease: "none" },
-          travelDuration
+          heroMark,
+          { scale: markScale, duration: flightDuration, ease: "none" },
+          0
         )
-        .to(
-          aboutPortrait,
-          { opacity: 1, duration: crossfadeDuration, ease: "none" },
-          travelDuration
-        );
+        // The measured boxes now match exactly. Swap layers on this single
+        // frame so the transformed AG label never overlaps the crisp static
+        // label and the animation genuinely ends at the destination card.
+        .set(heroPortrait, { opacity: 0 })
+        .set(aboutPortrait, { opacity: 1 }, "<");
 
       return () => {
         tl.scrollTrigger?.kill();
         tl.kill();
-        gsap.set([heroPortrait, aboutPortrait], { clearProps: "all" });
+        gsap.set([heroPortrait, aboutPortrait, heroMark], { clearProps: "all" });
       };
     });
 

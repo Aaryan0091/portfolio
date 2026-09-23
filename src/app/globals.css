@@ -3957,9 +3957,26 @@ footer {
 
 .new-ui-awards {
   position: relative;
-  z-index: 1;
+  /* The layout is translated beyond the section's normal box during its
+     pinned rise. Keep this chapter above the following section so Services
+     cannot mask the lower half of the cards before they enter the viewport. */
+  z-index: 2;
+  /* flow-root makes this a block formatting context, which stops the layout's
+     negative margin-bottom (the --awards-lift compensation) from collapsing
+     THROUGH this section. With padding-bottom at 0 on desktop, that margin was
+     escaping to become the section's own margin: Services moved up 498px but
+     this box did not shrink, so the two overlapped by 498px — and with this
+     section's higher z-index and opaque background, it painted straight over
+     the "Services I Offer" heading. */
+  display: flow-root;
   background: var(--dark-surface);
   padding: var(--new-ui-section-top) clamp(1.5rem, 6vw, 5rem) 6rem;
+}
+
+@media (min-width: 901px) {
+  .new-ui-awards {
+    padding-bottom: 0;
+  }
 }
 
 .new-ui-about-heading {
@@ -3969,6 +3986,15 @@ footer {
   font-size: var(--new-ui-heading-size);
   color: #f4faf7;
   margin-bottom: var(--new-ui-heading-gap);
+}
+
+.new-ui-awards-heading {
+  position: relative;
+  z-index: 2;
+}
+
+.new-ui-awards-heading-text {
+  display: block;
 }
 
 .new-ui-about-grid {
@@ -4040,7 +4066,8 @@ footer {
 }
 
 .new-ui-about-portrait .new-ui-portrait-mark {
-  font-size: 2.5rem;
+  font-size: 3rem;
+  color: #f4faf7;
 }
 
 .new-ui-about-copy {
@@ -4088,6 +4115,8 @@ footer {
 }
 
 .new-ui-awards-layout {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr) 260px;
   align-items: start;
@@ -4190,12 +4219,97 @@ footer {
   padding: var(--new-ui-section-top) clamp(1.5rem, 6vw, 5rem) 8rem;
 }
 
+@media (min-width: 901px) {
+  .new-ui-services {
+    padding-top: clamp(3.5rem, 6vw, 5rem);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Services I Offer — horizontal showcase (desktop + motion only)
+
+   Switched on by services-showcase.tsx adding .is-showcase from inside the
+   same matchMedia query that drives the animation, so the layout and the
+   script can never disagree about which mode is active. Without the class
+   (mobile, reduced motion, no JS) the section keeps its normal layout.
+
+   The section becomes a full-screen stage that pins. The heading sits at its
+   exact vertical centre, so it rises up the screen and stops in the middle —
+   the same entrance as Awards & Experiences. The cards run as one horizontal
+   track in the band BELOW the heading and are slid across from the right
+   while the stage is pinned, so they never rise into the heading.
+--------------------------------------------------------------------------- */
+.new-ui-services.is-showcase {
+  /* Heading line-height is 1.5, so half its box is 0.75 × its font size. */
+  --svc-heading-half: calc(0.75 * var(--new-ui-heading-size));
+  --svc-edge: clamp(1.5rem, 6vw, 5rem);
+  /* How much sooner (in px of scrolling) the heading appears than a clean
+     hand-off would allow. One wheel notch is ~100px, so 200px = 2 scrolls. */
+  --svc-appear-early: 200px;
+
+  height: 100svh;
+  padding: 0;
+  overflow: hidden;
+  /* The hand-off from Awards. With the heading at the stage's centre, a gap of
+     half a screen plus half a heading makes it reach the bottom of the
+     viewport exactly as Awards' bottom edge clears the top — a clean hand-off,
+     but 7.8 scrolls after the Awards pin ends. Trimming --svc-appear-early off
+     it brings the heading in 2 scrolls sooner; the trade-off is that the tail
+     of the last Awards card is still at the top of the screen for those 2
+     scrolls. Set it to 0px for the clean hand-off again. */
+  margin-top: calc(50svh + var(--svc-heading-half) - var(--svc-appear-early));
+}
+
+.new-ui-services.is-showcase .new-ui-services-main-heading {
+  position: absolute;
+  inset-inline: 0;
+  /* Centred with `top` rather than translateY(-50%): the heading's transform
+     belongs to the animation (it rises as the cards arrive), and GSAP would
+     otherwise fold the -50% into a fixed pixel value on first write. */
+  top: calc(50% - var(--svc-heading-half));
+  margin: 0;
+}
+
+.new-ui-services.is-showcase .new-ui-services-list {
+  position: absolute;
+  left: 0;
+  /* The band between the heading's bottom edge and the foot of the screen. */
+  top: calc(50% + var(--svc-heading-half) + clamp(1.25rem, 3.5svh, 2.5rem));
+  bottom: clamp(1.5rem, 5svh, 3rem);
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: clamp(2rem, 4vw, 3.5rem);
+  width: max-content;
+  max-width: none;
+  margin: 0;
+  padding-inline: var(--svc-edge);
+  will-change: transform;
+}
+
+/* Beats the staggered nth-child offsets used by the vertical layout. */
+.new-ui-services.is-showcase .new-ui-service-item {
+  margin: 0;
+  align-items: flex-end;
+}
+
+.new-ui-services.is-showcase .new-ui-service-card {
+  /* Sized to the band so a card can never grow up into the heading. */
+  height: 100%;
+  min-height: 0;
+  max-height: 320px;
+  gap: 1rem;
+}
+
 .new-ui-services-heading {
   font-family: var(--font-serif);
   font-style: italic;
   text-align: center;
   font-size: var(--new-ui-heading-size);
-  color: rgba(244, 250, 247, 0.45);
+  /* Full brightness to match every other section heading. This used to be
+     45% white, which read as muted grey once the background moved from
+     near-black to the lighter teal (--dark-surface). */
+  color: #f4faf7;
   margin-bottom: var(--new-ui-heading-gap);
 }
 

@@ -2,8 +2,8 @@ import Link from "next/link";
 import { IdeaForm } from "./_components/idea-form";
 import { NewUiHeader } from "./_components/site-header";
 import { PortraitScrollLink } from "./_components/portrait-scroll-link";
-import { AwardsHeadingReveal } from "./_components/awards-heading-reveal";
 import { AwardsPinSequence } from "./_components/awards-pin-sequence";
+import { ServicesShowcase } from "./_components/services-showcase";
 import { SmoothScroll } from "./_components/smooth-scroll";
 import { MotionPathReveal } from "./_components/motion-path-reveal";
 import { PathEditor } from "./_components/path-editor";
@@ -39,20 +39,8 @@ const sectionReveals = [
   // NOTE: Awards is absent on purpose. Its heading pins at the centre of the
   // screen and its content rises underneath, which is a different shape of
   // animation entirely — see awards-pin-sequence.tsx.
-  {
-    id: "services",
-    targets: ".new-ui-service-item",
-    trigger: ".new-ui-services-list",
-    path: [
-      { x: -150, y: 50 },
-      { x: -38, y: -14 },
-      { x: 0, y: 0 },
-    ],
-    start: "top 84%",
-    duration: 1.15,
-    stagger: 0.11,
-    curviness: 1.5,
-  },
+  // NOTE: Services is absent too. Its cards slide in horizontally on a
+  // pinned stage instead — see services-showcase.tsx.
   {
     id: "work-steps",
     // Steps should feel sequential, so they rise straight up in order with a
@@ -128,8 +116,10 @@ export default function NewUI() {
       </SmoothScroll>
 
       <PortraitScrollLink />
-      <AwardsHeadingReveal />
       <AwardsPinSequence />
+      {/* Must stay here: after the Awards pin, before the section reveals
+          below it, so every later trigger accounts for its pin spacing. */}
+      <ServicesShowcase />
       {sectionReveals.map((config) => (
         <MotionPathReveal key={config.id} {...config} />
       ))}
@@ -240,7 +230,11 @@ function NewUiBody() {
       </section>
 
       <section className="new-ui-awards" id="awards">
-        <h2 className="new-ui-about-heading new-ui-awards-heading">Awards &amp; Experiences</h2>
+        <h2 className="new-ui-about-heading new-ui-awards-heading">
+          <span className="new-ui-awards-heading-text">
+            Awards &amp; Experiences
+          </span>
+        </h2>
 
         <div className="new-ui-awards-layout">
           <p className="new-ui-awards-intro">

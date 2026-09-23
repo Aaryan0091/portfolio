@@ -5,14 +5,14 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 /**
- * The Awards section's pinned entrance, in four beats:
+ * The Awards section's pinned entrance, in three beats:
  *
  *   1. The heading scrolls up normally until its centre hits the centre of the
  *      screen, where it pins.
  *   2. While it is held, the content rises from below the fold.
- *   3. The content climbs PAST the heading — the heading fades out as it is
- *      covered — and comes to rest centred in the viewport.
- *   4. It holds there, then the pin releases and the whole section scrolls on.
+ *   3. When the content's top edge reaches the heading's vertical centre, the
+ *      heading travels upward with it. The pin releases as soon as the content
+ *      reaches the viewport top, allowing the next section to enter at once.
  *
  * WHY PIN THE HEADING AND NOT THE SECTION: the section is taller than the
  * viewport, and pinning a container taller than the screen leaves its bottom
@@ -26,7 +26,9 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
  * Ordinary scrolling can never bring it higher than that, no matter how long
  * the pin runs, because the spacer grows by exactly the amount the content
  * rises. Reaching the centre means translating it a further ~434px, straight
- * over the heading. That overlap is the reason the heading has to fade.
+ * into the heading. The visible heading text follows the content from the
+ * frame where the content's top reaches the heading's centre, while the
+ * heading's box remains pinned so the section geometry does not jump.
  *
  * WHY THE NEGATIVE MARGIN: that lift is a transform, so it does not shrink the
  * section's box. Left alone it would leave a ~434px hole between Awards and the
@@ -35,11 +37,27 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
  * reduced-motion and mobile keep the untouched layout.
  */
 
-/** Pin length, as a multiple of viewport height. Rise + hold share this. */
-const PIN_LENGTH_RATIO = 1.15;
+/**
+ * Pin length, as a multiple of viewport height. The full length is movement.
+ *
+ * Was 1.15 (~9 wheel notches on a 768px screen). 0.8 trims about three notches
+ * off the section; the content still travels the same on-screen distance, just
+ * a little faster than the page scrolls.
+ */
+const PIN_LENGTH_RATIO = 0.8;
 
-/** Fraction of the pin spent rising. The rest is the hold at centre. */
-const RISE_END = 0.72;
+/**
+ * How far past the pin point (in px of scrolling) the content's top edge
+ * should cross the bottom of the viewport. One wheel notch is ~100px, so this
+ * makes the content start rising into view on the second notch after the
+ * heading locks, instead of after four notches of empty screen.
+ *
+ * Why this is needed at all: `pinSpacing` pushes the content down by the full
+ * pin length, so left at y = 0 it starts `restTop + pinLength` down — about
+ * 624px below the fold at 768px tall. The rise below starts it from just under
+ * the fold instead.
+ */
+const ENTER_AFTER_PX = 100;
 
 /** Smallest gap kept above the content when it is taller than the viewport. */
 const MIN_TOP = 12;
@@ -57,10 +75,20 @@ export function AwardsPinSequence() {
 
     const section = document.querySelector<HTMLElement>(".new-ui-awards");
     const heading = document.querySelector<HTMLElement>(".new-ui-awards-heading");
+    const headingText = document.querySelector<HTMLElement>(
+      ".new-ui-awards-heading-text"
+    );
     const layout = document.querySelector<HTMLElement>(".new-ui-awards-layout");
     const items = gsap.utils.toArray<HTMLElement>(contentSelector);
 
-    if (!section || !heading || !layout || items.length === 0) return;
+    if (!section || !heading || !headingText || !layout || items.length === 0)
+      return;
+
+    // A previous hot-reloaded version of this sequence faded the heading out.
+    // Kill any surviving tween and remove the inline opacity it may have left
+    // behind so the heading always uses its bright CSS colour at every point.
+    gsap.killTweensOf(heading);
+    gsap.set(heading, { clearProps: "opacity" });
 
     const mm = gsap.matchMedia();
 
@@ -69,7 +97,13 @@ export function AwardsPinSequence() {
     // stutter, so this is desktop-only.
     mm.add("(min-width: 901px) and (prefers-reduced-motion: no-preference)", () => {
       // --- geometry, recomputed on every refresh so resizes stay correct ---
-      const pinLength = () => Math.round(window.innerHeight * PIN_LENGTH_RATIO);
+      // Floored so a very short viewport can never make the pin shorter than
+      // the entry distance, which would divide by ~zero in startBelowFold.
+      const pinLength = () =>
+        Math.max(
+          ENTER_AFTER_PX + 240,
+          Math.round(window.innerHeight * PIN_LENGTH_RATIO)
+        );
 
       // Captured BEFORE the pin exists. GSAP moves a pinned element's margins
       // onto the spacer it creates, so reading margin-bottom afterwards returns
@@ -87,20 +121,47 @@ export function AwardsPinSequence() {
         return (vh - headingH) / 2 + headingH + headingMarginBottom;
       };
 
-      /** Where the content should come to rest: centred, or just below the top. */
-      const targetTop = () =>
-        Math.max(MIN_TOP, (window.innerHeight - layout.offsetHeight) / 2);
+      /** How far the content must move to finish just below the viewport top. */
+      const lift = () => restTop() - MIN_TOP;
 
-      /** How far the content must be translated up to reach `targetTop`. */
-      const lift = () => restTop() - targetTop();
+      /**
+       * How far below the viewport's bottom edge the content should be parked
+       * at the moment the heading pins, so that it crosses into view exactly
+       * ENTER_AFTER_PX later.
+       *
+       * The content has to travel from (vh + below) down to MIN_TOP on screen
+       * across the pin, so it moves at rate r = (vh + below - MIN_TOP) / pin
+       * per px scrolled. Requiring below / r = ENTER_AFTER_PX and solving:
+       *
+       *     below = ENTER_AFTER_PX * (vh - MIN_TOP) / (pin - ENTER_AFTER_PX)
+       */
+      const startBelowFold = () => {
+        const vh = window.innerHeight;
+        return (ENTER_AFTER_PX * (vh - MIN_TOP)) / (pinLength() - ENTER_AFTER_PX);
+      };
+
+      /**
+       * The y offset that puts the content at (vh + below) when the pin starts.
+       * Its natural position then is restTop + pinLength (see ENTER_AFTER_PX).
+       */
+      const startY = () =>
+        window.innerHeight + startBelowFold() - (restTop() + pinLength());
 
       const applyLiftCompensation = () => {
         section.style.setProperty("--awards-lift", `${Math.round(lift())}px`);
       };
       applyLiftCompensation();
 
+      const syncHeadingWithContent = () => {
+        const headingBounds = heading.getBoundingClientRect();
+        const headingCenter = headingBounds.top + headingBounds.height / 2;
+        const overlap = layout.getBoundingClientRect().top - headingCenter;
+        gsap.set(headingText, { y: Math.min(0, overlap) });
+      };
+
       gsap.set(layout, { willChange: "transform" });
       gsap.set(items, { willChange: "opacity" });
+      gsap.set(headingText, { y: 0, willChange: "transform" });
 
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -118,54 +179,57 @@ export function AwardsPinSequence() {
           // Every distance above is viewport-derived, so they must be
           // re-evaluated on resize rather than baked in at build time.
           invalidateOnRefresh: true,
-          onRefresh: applyLiftCompensation,
+          onRefresh: () => {
+            applyLiftCompensation();
+            syncHeadingWithContent();
+          },
+          onUpdate: syncHeadingWithContent,
         },
       });
 
-      // Beat 2+3 — rise from below the fold, past the heading, to centre.
+      // Beat 2+3 — rise continuously from just below the fold to the viewport
+      // top. Starting at startY rather than 0 is what makes the content appear
+      // on the second scroll instead of the fifth.
       tl.fromTo(
         layout,
-        { y: 0 },
+        { y: () => startY() },
         {
-          // Overshoot the final lift by the distance the page will still scroll
-          // during the hold, so the hold can give it back and leave the content
-          // visually stationary.
-          y: () => -(lift() + pinLength() * (1 - RISE_END)),
+          y: () => -lift(),
           // Linear: progress is welded to scroll, and an eased curve would
           // break the "this much scroll, this much movement" mapping.
           ease: "none",
-          duration: RISE_END,
+          duration: 1,
         },
         0
       )
-        // Beat 4 — hold. y relaxes back toward the true lift at exactly the
-        // rate the page scrolls, which leaves the content parked on screen.
-        .to(
-          layout,
-          { y: () => -lift(), ease: "none", duration: 1 - RISE_END },
-          RISE_END
-        )
-        // Content fades up early in the rise, staggered.
+        // Content fades up as it enters, staggered. Timed so it is already
+        // about half opaque when its top crosses the fold (ENTER_AFTER_PX), so
+        // what rises into view is clearly readable rather than a faint ghost.
+        // The heading's opacity is never animated; only its inner text moves
+        // once overlap begins.
         .fromTo(
           items,
           { opacity: 0 },
-          { opacity: 1, ease: "none", stagger: 0.08, duration: RISE_END * 0.55 },
+          { opacity: 1, ease: "none", stagger: 0.05, duration: 0.3 },
           0
-        )
-        // The heading dims out across the window where the content is climbing
-        // over it, so the two never fight for the same pixels.
-        .to(heading, { opacity: 0, ease: "none", duration: 0.26 }, 0.4);
+        );
+
+      // The hand-off to Services (keeping its heading off screen until this
+      // section has gone) now lives in services-showcase.tsx, as spacing on
+      // that section rather than a fade here.
 
       return () => {
         tl.scrollTrigger?.kill();
         tl.kill();
         section.style.removeProperty("--awards-lift");
-        gsap.set([layout, ...items], { clearProps: "all" });
+        gsap.set([headingText, layout, ...items], { clearProps: "all" });
       };
     });
 
     return () => {
       mm.revert();
+      gsap.killTweensOf(heading);
+      gsap.set(heading, { clearProps: "opacity" });
     };
   }, []);
 
