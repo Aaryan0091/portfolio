@@ -1,14 +1,52 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
+// Script face for the section headings (see --font-script in globals.css).
+// Imported here rather than in the root layout so the old site never loads it.
+import "@fontsource/lobster/latin-400.css";
 import { IdeaForm } from "./_components/idea-form";
 import { NewUiHeader } from "./_components/site-header";
 import { PortraitScrollLink } from "./_components/portrait-scroll-link";
 import { AwardsPinSequence } from "./_components/awards-pin-sequence";
 import { ServicesShowcase } from "./_components/services-showcase";
+import { WorkStepsSpread } from "./_components/work-steps-spread";
+import { HeadingWriteOn } from "./_components/heading-write-on";
+import { FeaturedShowcase } from "./_components/featured-showcase";
+import { ViewCursor } from "./_components/view-cursor";
 import { SmoothScroll } from "./_components/smooth-scroll";
 import { MotionPathReveal } from "./_components/motion-path-reveal";
 import { PathEditor } from "./_components/path-editor";
 
 const lineCount = 5;
+
+/**
+ * Featured Work projects. Used twice: as the scattered tiles under the
+ * heading, and as the zoom-in panels that grow out of them. `slug` picks the
+ * artwork and panel colour (`.new-ui-art-<slug>` in globals.css) and pairs
+ * each tile with its panel. Copy comes from the project data on the old page.
+ */
+const featuredProjects = [
+  {
+    slug: "skillchain",
+    title: "SkillChain",
+    tag: "AI / NLP · Blockchain",
+    tagline: "AI developer verification, anchored on-chain",
+    stack: "GitHub API · NLP · Solidity · Polygon",
+  },
+  {
+    slug: "workstack",
+    title: "Work-Stack",
+    tag: "Full-stack · Chrome extension",
+    tagline: "Productivity and semantic bookmark platform",
+    stack: "React · Supabase · PostgreSQL · Chrome extension",
+  },
+  {
+    slug: "soulvoyage",
+    title: "Soul-Voyage",
+    tag: "Realtime · WebGL",
+    tagline: "Real-time geospatial web experience",
+    stack: "React · Firebase · WebSockets · WebGL Earth",
+  },
+];
 
 /**
  * Scroll-triggered entrances, one per section.
@@ -41,36 +79,10 @@ const sectionReveals = [
   // animation entirely — see awards-pin-sequence.tsx.
   // NOTE: Services is absent too. Its cards slide in horizontally on a
   // pinned stage instead — see services-showcase.tsx.
-  {
-    id: "work-steps",
-    // Steps should feel sequential, so they rise straight up in order with a
-    // slightly longer gap between them than the other sections use.
-    targets: ".new-ui-step-card",
-    trigger: ".new-ui-work-steps",
-    path: [
-      { x: 0, y: 130 },
-      { x: 16, y: -30 },
-      { x: 0, y: 0 },
-    ],
-    start: "top 84%",
-    duration: 1.25,
-    stagger: 0.17,
-    curviness: 1.4,
-  },
-  {
-    id: "featured",
-    targets: ".new-ui-featured-card",
-    trigger: ".new-ui-featured-grid",
-    path: [
-      { x: 190, y: 64 },
-      { x: 58, y: -34 },
-      { x: 0, y: 0 },
-    ],
-    start: "top 88%",
-    duration: 1.25,
-    stagger: 0.14,
-    curviness: 1.6,
-  },
+  // NOTE: Work Procedure is absent as well. Its cards deal out from a
+  // single stacked card instead — see work-steps-spread.tsx.
+  // NOTE: Featured Work's tile entrance is `featuredTilesReveal` below, not
+  // here: it has to be created BEFORE the Featured Work pin.
   {
     id: "insights",
     targets: ".new-ui-insight-card",
@@ -103,6 +115,55 @@ const sectionReveals = [
   },
 ];
 
+/**
+ * Where each Featured Work tile sits, measured off the reference moodboard:
+ * left, top and width as % of the tile area's width, plus width/height.
+ * Projects fill these in order — three projects take the first row; add
+ * more to `featuredProjects` and they land in the next spots automatically.
+ */
+const featuredSlots = [
+  { x: 0.6, y: 6, w: 29.1, ratio: 1.59 },
+  { x: 47.4, y: 4.3, w: 13, ratio: 1.09, compact: true },
+  { x: 77.6, y: 13.3, w: 21.4, ratio: 1.96 },
+  { x: 35.1, y: 36.4, w: 21.4, ratio: 1.97 },
+  { x: 63.6, y: 30.9, w: 21.6, ratio: 1.26 },
+  { x: 0, y: 55.7, w: 19.4, ratio: 0.75 },
+  { x: 49, y: 62.2, w: 20.5, ratio: 0.9 },
+  { x: 77.4, y: 62.7, w: 21.4, ratio: 1.97 },
+];
+
+// Up to eight projects; a ninth would need another slot above.
+const usedSlots = featuredSlots.slice(0, featuredProjects.length);
+
+/** Height of the tile area: the lowest tile's bottom edge, same units. */
+const featuredGridHeight = Math.max(
+  ...usedSlots.map((slot) => slot.y + slot.w / slot.ratio)
+);
+
+/**
+ * Featured Work tiles float up into their scattered spots rather than flying
+ * in from the side — a sideways entrance reads as a row, which this isn't.
+ *
+ * Kept out of `sectionReveals` because of mount order: it finishes just
+ * BEFORE the Featured Work pin starts, and a trigger created after that pin
+ * gets pushed down by the pin's length — the tiles were then still waiting
+ * to enter while the zoom sequence ran.
+ */
+const featuredTilesReveal = {
+  id: "featured",
+  targets: ".new-ui-featured-card",
+  trigger: ".new-ui-featured-grid",
+  path: [
+    { x: 0, y: 140 },
+    { x: 0, y: -12 },
+    { x: 0, y: 0 },
+  ],
+  start: "top 92%",
+  duration: 1.25,
+  stagger: 0.14,
+  curviness: 1.2,
+};
+
 export default function NewUI() {
   return (
     <div className="new-ui-root">
@@ -110,6 +171,7 @@ export default function NewUI() {
           ancestor would otherwise become their containing block and drag them
           up the page along with the content. */}
       <NewUiHeader />
+      <ViewCursor />
 
       <SmoothScroll>
         <NewUiBody />
@@ -120,6 +182,23 @@ export default function NewUI() {
       {/* Must stay here: after the Awards pin, before the section reveals
           below it, so every later trigger accounts for its pin spacing. */}
       <ServicesShowcase />
+      <WorkStepsSpread />
+      <HeadingWriteOn
+        id="featured"
+        heading=".new-ui-featured-heading"
+        lines=".new-ui-featured-heading .new-ui-write-line"
+        // A wider band than the default (85% → 40%): the same writing spread
+        // over ~40% more scroll, so it reads slower.
+        start="top 92%"
+        end="top 28%"
+      />
+      <MotionPathReveal {...featuredTilesReveal} />
+      <FeaturedShowcase />
+      <HeadingWriteOn
+        id="insights"
+        heading=".new-ui-insights-heading"
+        lines=".new-ui-insights-heading .new-ui-write-line"
+      />
       {sectionReveals.map((config) => (
         <MotionPathReveal key={config.id} {...config} />
       ))}
@@ -343,6 +422,14 @@ function NewUiBody() {
             </div>
           ))}
         </div>
+
+        {/* Zig-zag progress line through the cards — showcase mode only. */}
+        <svg className="new-ui-services-line" aria-hidden="true">
+          <path className="new-ui-services-line-base" />
+          {/* pathLength="1" lets the draw-on animate 1 → 0 whatever the
+              zig-zag's real length is on this screen. */}
+          <path className="new-ui-services-line-fill" pathLength={1} />
+        </svg>
       </section>
 
       <section className="new-ui-work" id="work-procedure">
@@ -378,9 +465,8 @@ function NewUiBody() {
       <section className="new-ui-featured" id="featured-work">
         <div className="new-ui-featured-head">
           <h2 className="new-ui-name new-ui-featured-heading">
-            Featured
-            <br />
-            Work
+            <span className="new-ui-write-line">Featured</span>
+            <span className="new-ui-write-line">Work</span>
           </h2>
           <ul className="new-ui-featured-categories">
             <li>AI / NLP</li>
@@ -391,17 +477,77 @@ function NewUiBody() {
           </ul>
         </div>
 
-        <div className="new-ui-featured-grid">
-          {[
-            { title: "SkillChain", tag: "AI / NLP · Blockchain" },
-            { title: "Work-Stack", tag: "Full-stack · Chrome extension" },
-            { title: "Soul-Voyage", tag: "Realtime · WebGL" },
-          ].map((project) => (
-            <a className="new-ui-featured-card" href="/#work" key={project.title}>
-              <span className="new-ui-featured-glow" aria-hidden="true" />
-              <strong>{project.title}</strong>
-              <span>{project.tag}</span>
-            </a>
+        <div
+          className="new-ui-featured-grid"
+          style={{ "--grid-h": featuredGridHeight.toFixed(2) } as CSSProperties}
+        >
+          {/* Scattered like a moodboard: each tile has its own size and
+              height (see globals.css). No data-speed parallax here: the
+              section pins for the zoom sequence, and drift during a pin
+              would pull the tiles away from the panels that grow out of
+              them. */}
+          {featuredProjects.map((project, index) => {
+            const slot = usedSlots[index];
+            return (
+              <div
+                className={`new-ui-featured-item${slot.compact ? " is-compact" : ""}`}
+                style={
+                  {
+                    "--slot-x": slot.x,
+                    "--slot-y": slot.y,
+                    "--slot-w": slot.w,
+                    "--slot-ratio": slot.ratio,
+                  } as CSSProperties
+                }
+                key={project.slug}
+              >
+                <Link
+                  className={`new-ui-featured-card new-ui-art-${project.slug}`}
+                  href="/#work"
+                  data-view-cursor
+                  data-project={project.slug}
+                >
+                  <span className="new-ui-featured-glow" aria-hidden="true" />
+                  <strong>{project.title}</strong>
+                  <span>{project.tag}</span>
+                </Link>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Zoom-in overlays: while the section is pinned, each project in
+            turn grows out of its tile into a large case-study panel, holds,
+            then shrinks back — see featured-showcase.tsx. Hidden (and so not
+            focusable) except during their turn; desktop only. */}
+        <div className="new-ui-showcase-stage">
+          <span className="new-ui-showcase-dim" aria-hidden="true" />
+          {featuredProjects.map((project, index) => (
+            <Link
+              className={`new-ui-showcase-card new-ui-art-${project.slug}`}
+              href="/#work"
+              data-view-cursor
+              data-project={project.slug}
+              key={project.slug}
+            >
+              <span className="new-ui-showcase-media" aria-hidden="true">
+                <span className="new-ui-showcase-art" />
+              </span>
+              {/* Copy of the tile's own label, so the first frame of the
+                  zoom looks exactly like the tile it grows out of. */}
+              <span className="new-ui-showcase-label" aria-hidden="true">
+                <strong>{project.title}</strong>
+                <span>{project.tag}</span>
+              </span>
+              <span className="new-ui-showcase-title">{project.title}</span>
+              <span className="new-ui-showcase-meta">
+                <span className="new-ui-showcase-index">
+                  {String(index + 1).padStart(2, "0")} · {project.tag}
+                </span>
+                <span className="new-ui-showcase-tagline">{project.tagline}</span>
+                <span className="new-ui-showcase-stack">{project.stack}</span>
+              </span>
+            </Link>
           ))}
         </div>
 
@@ -411,7 +557,9 @@ function NewUiBody() {
       </section>
 
       <section className="new-ui-insights" id="insights">
-        <h2 className="new-ui-about-heading">Insights &amp; Thoughts</h2>
+        <h2 className="new-ui-about-heading new-ui-insights-heading">
+          <span className="new-ui-write-line">Insights &amp; Thoughts</span>
+        </h2>
 
         <div className="new-ui-insights-body">
           <div className="new-ui-insights-grid">
