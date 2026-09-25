@@ -62,6 +62,14 @@ const ENTER_AFTER_PX = 100;
 /** Smallest gap kept above the content when it is taller than the viewport. */
 const MIN_TOP = 12;
 
+/**
+ * Heading opacity once the content has risen over it. Low enough that the
+ * text laid over it (the "Building end-to-end products…" intro, which has no
+ * card behind it) reads cleanly, while the heading stays faintly visible as
+ * a backdrop.
+ */
+const HEADING_DIMMED = 0.14;
+
 const contentSelector =
   ".new-ui-awards-intro, .new-ui-awards-card, .new-ui-awards-side";
 
@@ -152,11 +160,39 @@ export function AwardsPinSequence() {
       };
       applyLiftCompensation();
 
+      /**
+       * Keeps the heading behind the rising content and out of its way:
+       *
+       * - DIM: from the moment the content's top edge reaches the bottom of
+       *   the heading's letters until it reaches their middle, the heading
+       *   fades from full brightness to HEADING_DIMMED — proportionally, so it
+       *   follows the scroll — and stays dimmed while the content covers it.
+       *   (The heading sits below the content in the stacking order, so the
+       *   content passes over it rather than under it.)
+       * - MOVE: once the content's top passes the heading's middle, the
+       *   heading's text travels up with it.
+       */
       const syncHeadingWithContent = () => {
         const headingBounds = heading.getBoundingClientRect();
         const headingCenter = headingBounds.top + headingBounds.height / 2;
-        const overlap = layout.getBoundingClientRect().top - headingCenter;
-        gsap.set(headingText, { y: Math.min(0, overlap) });
+        const layoutTop = layout.getBoundingClientRect().top;
+        const overlap = layoutTop - headingCenter;
+
+        // Bottom of the letters themselves (incl. the tails of p/g), not the
+        // heading's taller line box. Measured without the text's own shift.
+        const range = document.createRange();
+        range.selectNodeContents(headingText);
+        const lettersBottom =
+          range.getBoundingClientRect().bottom -
+          (Number(gsap.getProperty(headingText, "y")) || 0);
+
+        const dimSpan = Math.max(1, lettersBottom - headingCenter);
+        const dimProgress = gsap.utils.clamp(0, 1, (lettersBottom - layoutTop) / dimSpan);
+
+        gsap.set(headingText, {
+          y: Math.min(0, overlap),
+          opacity: 1 - (1 - HEADING_DIMMED) * dimProgress,
+        });
       };
 
       gsap.set(layout, { willChange: "transform" });
@@ -205,8 +241,8 @@ export function AwardsPinSequence() {
         // Content fades up as it enters, staggered. Timed so it is already
         // about half opaque when its top crosses the fold (ENTER_AFTER_PX), so
         // what rises into view is clearly readable rather than a faint ghost.
-        // The heading's opacity is never animated; only its inner text moves
-        // once overlap begins.
+        // The heading's own opacity is handled in syncHeadingWithContent: it
+        // dims as the content rises over it.
         .fromTo(
           items,
           { opacity: 0 },

@@ -52,14 +52,21 @@ const SCROLL_PER_PX = 0.65;
 /** How far short of the heading's text card 01 stops during phase A. */
 const CLEARANCE_PX = 24;
 
-/** Scroll over which the progress line fades in once the heading has gone. */
-const LINE_FADE_PX = 60;
+/** Scroll over which the progress line fades in once the heading has gone —
+ * long enough that it eases in rather than popping up. */
+const LINE_FADE_PX = 150;
 
-/** The line's glow at the start and end of the run (same shape, so GSAP can
- * tween between them). Applied to the whole SVG: CSS filters on individual
- * SVG shapes aren't reliable across browsers. */
-const LINE_GLOW_START = "drop-shadow(0px 0px 1px rgba(125, 211, 252, 0.2))";
-const LINE_GLOW_END = "drop-shadow(0px 0px 7px rgba(125, 211, 252, 0.95))";
+/**
+ * Seconds the line's draw-on and glow take to catch up with the scroll.
+ * The zig-zag itself moves with the cards 1:1 (it must stay threaded through
+ * them), but the drawing and brightening glide after the scroll position
+ * instead of stepping with every wheel notch.
+ */
+const LINE_DRAW_SMOOTHING = 0.6;
+
+/** Opacity of the line's soft glow at the start and end of the run. */
+const LINE_GLOW_START = 0.15;
+const LINE_GLOW_END = 0.9;
 
 export function ServicesShowcase() {
   useEffect(() => {
@@ -81,8 +88,19 @@ export function ServicesShowcase() {
     const lineFill = document.querySelector<SVGPathElement>(
       ".new-ui-services-line-fill"
     );
+    const lineGlow = document.querySelector<SVGPathElement>(
+      ".new-ui-services-line-glow"
+    );
 
-    if (!section || !track || !heading || !line || !lineBase || !lineFill)
+    if (
+      !section ||
+      !track ||
+      !heading ||
+      !line ||
+      !lineBase ||
+      !lineFill ||
+      !lineGlow
+    )
       return;
 
     const mm = gsap.matchMedia();
@@ -188,6 +206,7 @@ export function ServicesShowcase() {
           .join(" ");
         lineBase.setAttribute("d", d);
         lineFill.setAttribute("d", d);
+        lineGlow.setAttribute("d", d);
       };
 
       // Redrawn AFTER each refresh: during refreshInit the pinned stage still
@@ -248,54 +267,71 @@ export function ServicesShowcase() {
           },
           HEADING_EXIT_PX
         )
-        // Progress line. Starts exactly as phase B does — the heading is
-        // fully off screen by then, so the two are never visible together —
-        // then draws itself left→right and brightens in lockstep with the
-        // cards, reaching the screen's right edge at full glow as the last
-        // card lands.
+        // Progress line appears. Starts exactly as phase B does — the
+        // heading is fully off screen by then, so the two are never visible
+        // together.
         .fromTo(
           line,
           { opacity: 0 },
           {
             opacity: 1,
-            ease: "none",
+            ease: "sine.inOut",
             duration: Math.min(LINE_FADE_PX, phaseBScroll),
-          },
-          HEADING_EXIT_PX
-        )
-        .fromTo(
-          line,
-          { filter: LINE_GLOW_START },
-          {
-            filter: LINE_GLOW_END,
-            ease: "none",
-            duration: phaseBScroll,
-            immediateRender: false,
-          },
-          HEADING_EXIT_PX
-        )
-        // Via attributes, not CSS: GSAP rounds CSS px values to whole
-        // pixels, which on a pathLength of 1 turned the draw-on into a jump
-        // from hidden to fully drawn.
-        .fromTo(
-          lineFill,
-          { attr: { "stroke-dasharray": 1, "stroke-dashoffset": 1 } },
-          {
-            attr: { "stroke-dashoffset": 0 },
-            ease: "none",
-            duration: phaseBScroll,
           },
           HEADING_EXIT_PX
         );
 
+      // The line draws itself left→right and brightens over exactly phase
+      // B's stretch of scroll, reaching the screen's right edge at full glow
+      // as the last card lands. It's its own timeline so it can have a little
+      // scrub smoothing (see LINE_DRAW_SMOOTHING) without loosening the
+      // cards. Positions are taken from the main pin's start, which has
+      // already been measured by the time this one refreshes.
+      const drawTl = gsap.timeline({
+        scrollTrigger: {
+          id: "services-showcase-draw",
+          trigger: section,
+          start: () => (tl.scrollTrigger?.start ?? 0) + HEADING_EXIT_PX,
+          end: () =>
+            (tl.scrollTrigger?.start ?? 0) + HEADING_EXIT_PX + phaseBScroll,
+          scrub: LINE_DRAW_SMOOTHING,
+          invalidateOnRefresh: true,
+        },
+        defaults: { ease: "none", duration: 1 },
+      });
+
+      // Via attributes, not CSS: GSAP rounds CSS px values to whole pixels,
+      // which on a pathLength of 1 turned the draw-on into a jump from hidden
+      // to fully drawn.
+      drawTl
+        .fromTo(
+          [lineFill, lineGlow],
+          { attr: { "stroke-dasharray": 1, "stroke-dashoffset": 1 } },
+          { attr: { "stroke-dashoffset": 0 } },
+          0
+        )
+        // The glow is a blurred copy of the line whose opacity rises, instead
+        // of an animated drop-shadow filter: re-filtering the whole long line
+        // every frame was expensive enough to drop frames.
+        .fromTo(
+          lineGlow,
+          { opacity: LINE_GLOW_START },
+          { opacity: LINE_GLOW_END },
+          0
+        );
+
       return () => {
+        drawTl.scrollTrigger?.kill();
+        drawTl.kill();
         tl.scrollTrigger?.kill();
         tl.kill();
         gsap.set([track, heading], { clearProps: "transform" });
         ScrollTrigger.removeEventListener("refresh", buildLine);
-        gsap.set([line, lineFill], { clearProps: "all" });
-        lineFill.removeAttribute("stroke-dasharray");
-        lineFill.removeAttribute("stroke-dashoffset");
+        gsap.set([line, lineFill, lineGlow], { clearProps: "all" });
+        [lineFill, lineGlow].forEach((path) => {
+          path.removeAttribute("stroke-dasharray");
+          path.removeAttribute("stroke-dashoffset");
+        });
         section.classList.remove("is-showcase");
       };
     });

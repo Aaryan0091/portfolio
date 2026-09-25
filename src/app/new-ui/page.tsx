@@ -12,11 +12,17 @@ import { WorkStepsSpread } from "./_components/work-steps-spread";
 import { HeadingWriteOn } from "./_components/heading-write-on";
 import { FeaturedShowcase } from "./_components/featured-showcase";
 import { ViewCursor } from "./_components/view-cursor";
+import { PortfolioProgress } from "./_components/portfolio-progress";
+import { BackgroundLines } from "./_components/background-lines";
+import {
+  GitHubIcon,
+  LeetCodeIcon,
+  LinkedInIcon,
+  MailIcon,
+} from "./_components/social-icons";
 import { SmoothScroll } from "./_components/smooth-scroll";
 import { MotionPathReveal } from "./_components/motion-path-reveal";
 import { PathEditor } from "./_components/path-editor";
-
-const lineCount = 5;
 
 /**
  * Featured Work projects. Used twice: as the scattered tiles under the
@@ -92,7 +98,10 @@ const sectionReveals = [
       { x: 36, y: -18 },
       { x: 0, y: 0 },
     ],
-    start: "top 84%",
+    // About a third more scroll than the default band (84% → 38%), so the
+    // cards glide in more slowly.
+    start: "top 88%",
+    end: "top 26%",
     duration: 1.2,
     stagger: 0.12,
     curviness: 1.5,
@@ -108,9 +117,14 @@ const sectionReveals = [
       { x: 0, y: -18 },
       { x: 0, y: 0 },
     ],
-    start: "top 88%",
+    // All three rise together (no stagger) and are fully in place by the time
+    // the row is 80% of the way down the screen. They used to be staggered
+    // and finish at "top 38%" — near the bottom of the page that point often
+    // can't be scrolled to, so the boxes sat mid-flight at uneven heights.
+    start: "top bottom",
+    end: "top 80%",
     duration: 1.1,
-    stagger: 0.14,
+    stagger: 0,
     curviness: 1.3,
   },
 ];
@@ -132,8 +146,26 @@ const featuredSlots = [
   { x: 77.4, y: 62.7, w: 21.4, ratio: 1.97 },
 ];
 
+/**
+ * How much bigger than the reference the tiles are drawn. Each tile grows
+ * around its own centre, so the arrangement keeps its shape, and is then
+ * nudged inward if that pushed it past an edge.
+ */
+const TILE_SCALE = 1.2;
+
 // Up to eight projects; a ninth would need another slot above.
-const usedSlots = featuredSlots.slice(0, featuredProjects.length);
+const usedSlots = featuredSlots.slice(0, featuredProjects.length).map((slot) => {
+  const w = slot.w * TILE_SCALE;
+  const h = w / slot.ratio;
+  const centreX = slot.x + slot.w / 2;
+  const centreY = slot.y + slot.w / slot.ratio / 2;
+  return {
+    ...slot,
+    w,
+    x: Math.min(Math.max(centreX - w / 2, 0), 100 - w),
+    y: Math.max(centreY - h / 2, 0),
+  };
+});
 
 /** Height of the tile area: the lowest tile's bottom edge, same units. */
 const featuredGridHeight = Math.max(
@@ -154,11 +186,16 @@ const featuredTilesReveal = {
   targets: ".new-ui-featured-card",
   trigger: ".new-ui-featured-grid",
   path: [
-    { x: 0, y: 140 },
-    { x: 0, y: -12 },
+    { x: 0, y: 80 },
+    { x: 0, y: -8 },
     { x: 0, y: 0 },
   ],
-  start: "top 92%",
+  // Starts the moment the tiles enter the screen and is done by the time
+  // they're a quarter of the way up it, so they're visible right under the
+  // heading. (It used to run to "top 38%": on shorter screens the heading sat
+  // over an empty area for several scrolls while the tiles faded in).
+  start: "top bottom",
+  end: "top 75%",
   duration: 1.25,
   stagger: 0.14,
   curviness: 1.2,
@@ -172,6 +209,7 @@ export default function NewUI() {
           up the page along with the content. */}
       <NewUiHeader />
       <ViewCursor />
+      <PortfolioProgress />
 
       <SmoothScroll>
         <NewUiBody />
@@ -198,6 +236,9 @@ export default function NewUI() {
         id="insights"
         heading=".new-ui-insights-heading"
         lines=".new-ui-insights-heading .new-ui-write-line"
+        // ~35% more scroll than the default (85% → 40%): a slower write.
+        start="top 90%"
+        end="top 29%"
       />
       {sectionReveals.map((config) => (
         <MotionPathReveal key={config.id} {...config} />
@@ -212,23 +253,7 @@ function NewUiBody() {
     <main className="new-ui-page">
       <div className="new-ui-backdrop" aria-hidden="true">
         <span className="new-ui-glow" />
-        <div className="new-ui-lines">
-          {Array.from({ length: lineCount }).map((_, index) => (
-            <span
-              className="new-ui-line"
-              key={index}
-              style={{ left: `${((index + 1) / (lineCount + 1)) * 100}%` }}
-            >
-              <span
-                className={`new-ui-line-pulse ${index % 2 === 0 ? "new-ui-line-pulse-down" : "new-ui-line-pulse-up"}`}
-                style={{
-                  animationDuration: `${5 + (index % 5)}s`,
-                  animationDelay: `${-(index * 0.7)}s`,
-                }}
-              />
-            </span>
-          ))}
-        </div>
+        <BackgroundLines />
       </div>
 
       <section className="new-ui-hero">
@@ -425,9 +450,26 @@ function NewUiBody() {
 
         {/* Zig-zag progress line through the cards — showcase mode only. */}
         <svg className="new-ui-services-line" aria-hidden="true">
+          <defs>
+            {/* Soft glow for the line: a blurred copy drawn underneath. */}
+            <filter
+              id="new-ui-services-line-blur"
+              x="-5%"
+              y="-50%"
+              width="110%"
+              height="200%"
+            >
+              <feGaussianBlur stdDeviation="4" />
+            </filter>
+          </defs>
           <path className="new-ui-services-line-base" />
           {/* pathLength="1" lets the draw-on animate 1 → 0 whatever the
               zig-zag's real length is on this screen. */}
+          <path
+            className="new-ui-services-line-glow"
+            pathLength={1}
+            filter="url(#new-ui-services-line-blur)"
+          />
           <path className="new-ui-services-line-fill" pathLength={1} />
         </svg>
       </section>
@@ -551,9 +593,6 @@ function NewUiBody() {
           ))}
         </div>
 
-        <Link className="new-ui-gallery-link" href="/gallery">
-          Open the interactive WebGL gallery →
-        </Link>
       </section>
 
       <section className="new-ui-insights" id="insights">
@@ -577,7 +616,7 @@ function NewUiBody() {
                 tag: "Full-stack",
               },
             ].map((note) => (
-              <div className="new-ui-insight-card" key={note.title}>
+              <div className="new-ui-insight-card" data-view-cursor key={note.title}>
                 <span className="new-ui-insight-glow" aria-hidden="true" />
                 <span className="new-ui-insight-tag">{note.tag}</span>
                 <p>{note.title}</p>
@@ -633,7 +672,7 @@ function NewUiBody() {
                 rel="noreferrer"
                 aria-label="GitHub"
               >
-                GH
+                <GitHubIcon />
               </a>
               <a
                 href="https://www.linkedin.com/in/aaryan-gupta-1262a1284"
@@ -641,7 +680,7 @@ function NewUiBody() {
                 rel="noreferrer"
                 aria-label="LinkedIn"
               >
-                in
+                <LinkedInIcon />
               </a>
               <a
                 href="https://leetcode.com/u/Aaryan91"
@@ -649,10 +688,10 @@ function NewUiBody() {
                 rel="noreferrer"
                 aria-label="LeetCode"
               >
-                LC
+                <LeetCodeIcon />
               </a>
               <a href="mailto:aaryangupta2005@gmail.com" aria-label="Email">
-                @
+                <MailIcon />
               </a>
             </div>
           </div>
@@ -676,10 +715,6 @@ function NewUiBody() {
         </div>
 
         <div className="new-ui-footer-watermark" aria-hidden="true">Aaryan Gupta</div>
-
-        <div className="new-ui-footer-bottom">
-          <span>© 2026 Aaryan Gupta</span>
-        </div>
       </footer>
 
     </main>

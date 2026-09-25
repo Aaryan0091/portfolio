@@ -106,7 +106,70 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
       };
     });
 
+    // --- Keep your place on reload ------------------------------------------
+    // The browser restores the scroll position the instant the page loads —
+    // before the pinned sections (Awards, Services, Featured Work) have added
+    // their extra scroll length. The page is thousands of px shorter at that
+    // moment, so anything below the pins got clamped: reloading on Insights
+    // or Contact dropped you back around the Featured Work projects.
+    //
+    // So restoration is done by hand: the position is saved when the page is
+    // left, and put back only after everything has been measured. Only on a
+    // reload or back/forward — a fresh visit still starts at the top.
+    const storageKey = `scroll:${window.location.pathname}`;
+    const previousRestoration = window.history.scrollRestoration;
+    window.history.scrollRestoration = "manual";
+
+    const savePosition = () => {
+      try {
+        sessionStorage.setItem(storageKey, String(Math.round(window.scrollY)));
+      } catch {
+        // Storage can be unavailable (private mode, quotas) — just skip.
+      }
+    };
+    window.addEventListener("pagehide", savePosition);
+
+    const navigation = performance.getEntriesByType("navigation")[0] as
+      | PerformanceNavigationTiming
+      | undefined;
+    const isReturnVisit =
+      navigation?.type === "reload" || navigation?.type === "back_forward";
+    let savedPosition = 0;
+    try {
+      savedPosition = Number(sessionStorage.getItem(storageKey)) || 0;
+    } catch {
+      savedPosition = 0;
+    }
+
+    // Re-measure every trigger once the web fonts are in and the page has
+    // loaded. The headings use Lobster, which is wider and taller than the
+    // fallback: if it lands after ScrollTrigger has measured, every heading
+    // above a section changes height and all the scroll positions below
+    // drift — which showed up as Featured Work's tiles still invisible while
+    // they were on screen. The saved position is restored right after, when
+    // the page has its full, final length.
+    let disposed = false;
+    const pageLoaded =
+      document.readyState === "complete"
+        ? Promise.resolve()
+        : new Promise<void>((resolve) =>
+            window.addEventListener("load", () => resolve(), { once: true })
+          );
+    Promise.all([document.fonts?.ready, pageLoaded]).then(() => {
+      if (disposed) return;
+      ScrollTrigger.refresh();
+      if (isReturnVisit && savedPosition > 0) {
+        const smoother = ScrollSmoother.get();
+        if (smoother) smoother.scrollTo(savedPosition, false);
+        else window.scrollTo(0, savedPosition);
+        ScrollTrigger.update();
+      }
+    });
+
     return () => {
+      disposed = true;
+      window.removeEventListener("pagehide", savePosition);
+      window.history.scrollRestoration = previousRestoration;
       mm.revert();
     };
   }, []);

@@ -8,8 +8,9 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
  * Featured Work's zoom sequence.
  *
  * The tiles first arrive and sit in their scattered layout as normal. Once
- * the tile row reaches the middle of the screen the section pins, and each
- * project takes a turn:
+ * the tile row reaches the middle of the screen the tiles hold still while
+ * the "Featured Work" heading carries on scrolling up and off the screen, so
+ * only the projects are left in view. Then each project takes a turn:
  *
  *   1. GROW   — the tile swells, from where it sits, into a large case-study
  *               panel (coloured frame, artwork inset, big title top-left,
@@ -39,7 +40,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
  */
 
 /** Scroll, in px (~100 per wheel notch), spent on each beat. */
-const LEAD_PX = 120; // tiles shown pinned before the first zoom starts
+const LEAD_PX = 120; // tiles alone on screen before the first zoom starts
 const GROW_PX = 320;
 const HOLD_PX = 180;
 const SHRINK_PX = 280;
@@ -192,13 +193,31 @@ export function FeaturedShowcase() {
       const onRefresh = () => {
         placeDim();
         copyLabels();
+        syncTurns();
       };
-      ScrollTrigger.addEventListener("refresh", onRefresh);
 
       // --- the sequence ------------------------------------------------------
 
+      const head = section.querySelector<HTMLElement>(".new-ui-featured-head");
+
+      /**
+       * How far the heading row (title + category list) is still on screen,
+       * measured from the top, when the pin starts. While the tiles hold
+       * still, the heading keeps travelling up 1:1 with the scroll by this
+       * much, so it leaves the screen exactly as a normal scroll would carry
+       * it off — and the zooms then play with only the projects on screen.
+       */
+      const headExit = () =>
+        head
+          ? Math.max(0, sectionScreenTop() + head.offsetTop + head.offsetHeight + 8)
+          : 0;
+      // Fixed when the timeline is built; a resize re-measures the distance
+      // (function value below) and can only change its speed slightly.
+      const exitPx = Math.round(headExit());
+      const leadIn = exitPx + LEAD_PX;
+
       const turn = GROW_PX + HOLD_PX + SHRINK_PX;
-      const total = LEAD_PX + pairs.length * turn + (pairs.length - 1) * GAP_PX;
+      const total = leadIn + pairs.length * turn + (pairs.length - 1) * GAP_PX;
 
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -220,6 +239,18 @@ export function FeaturedShowcase() {
         defaults: { ease: "none", immediateRender: false },
       });
 
+      // Heading scrolls up and out while the tiles stay put.
+      if (head && exitPx > 0) {
+        tl.fromTo(head, { y: 0 }, { y: () => -headExit(), duration: exitPx }, 0);
+      }
+
+      const turns: {
+        panel: HTMLElement;
+        tile: HTMLElement;
+        start: number;
+        done: number;
+      }[] = [];
+
       // Durations are scroll px, so each beat owns exactly its share.
       pairs.forEach(({ panel, tile }, index) => {
         const media = panel.querySelector<HTMLElement>(".new-ui-showcase-media");
@@ -227,7 +258,7 @@ export function FeaturedShowcase() {
         const title = panel.querySelector<HTMLElement>(".new-ui-showcase-title");
         const meta = panel.querySelector<HTMLElement>(".new-ui-showcase-meta");
 
-        const start = LEAD_PX + index * (turn + GAP_PX);
+        const start = leadIn + index * (turn + GAP_PX);
         const shrinkAt = start + GROW_PX + HOLD_PX;
         const done = shrinkAt + SHRINK_PX;
 
@@ -261,12 +292,11 @@ export function FeaturedShowcase() {
           borderRadius: MEDIA_RADIUS,
         };
 
-        // Swap the tile for its overlay, which starts exactly on top of it.
-        // 1px tweens with explicit from AND to values rather than .set():
-        // a .set() reverts to whatever it recorded on first render, which
-        // after a refresh left tiles hidden before their turn had started.
-        tl.fromTo(panel, { autoAlpha: 0 }, { autoAlpha: 1, duration: 1 }, start)
-          .fromTo(tile, { autoAlpha: 1 }, { autoAlpha: 0, duration: 1 }, start)
+        // Which of tile/overlay is showing is decided in syncTurns() below,
+        // not by tweens.
+        turns.push({ panel, tile, start, done });
+
+        tl
 
           // GROW
           .fromTo(panel, atTile(), { ...atPanel(), duration: GROW_PX }, start)
@@ -314,10 +344,32 @@ export function FeaturedShowcase() {
             shrinkAt + SHRINK_PX * 0.7
           )
 
-          // Swap back.
-          .fromTo(panel, { autoAlpha: 1 }, { autoAlpha: 0, duration: 1 }, done - 1)
-          .fromTo(tile, { autoAlpha: 0 }, { autoAlpha: 1, duration: 1 }, done - 1);
+          // Pads the timeline so its end lands exactly on `done`.
+          .set({}, {}, done);
       });
+
+      /**
+       * Swap each tile for its overlay while (and only while) the playhead is
+       * inside that project's turn. This used to be tweens on autoAlpha, but
+       * a refresh (e.g. the one after web fonts load) re-renders the timeline
+       * in a way that could leave a tile's visibility "hidden" before its
+       * turn had even started — the tiles were invisible under the heading.
+       * Deciding it from the playhead position each update can't get stuck.
+       */
+      const syncTurns = () => {
+        const time = tl.time();
+        turns.forEach(({ panel, tile, start, done }) => {
+          const active = time >= start && time < done;
+          tile.style.visibility = active ? "hidden" : "";
+          panel.style.visibility = active ? "visible" : "";
+          panel.style.opacity = active ? "1" : "";
+        });
+      };
+      tl.eventCallback("onUpdate", syncTurns);
+      syncTurns();
+
+      // Registered only now: onRefresh calls syncTurns, which needs `tl`.
+      ScrollTrigger.addEventListener("refresh", onRefresh);
 
       return () => {
         ScrollTrigger.removeEventListener("refresh", onRefresh);
@@ -337,10 +389,10 @@ export function FeaturedShowcase() {
         );
         // Only what this sequence touched: the tiles' transforms belong to
         // their entrance reveal.
-        gsap.set(
-          pairs.map(({ tile }) => tile),
-          { clearProps: "visibility,opacity" }
-        );
+        pairs.forEach(({ tile }) => {
+          tile.style.visibility = "";
+        });
+        if (head) gsap.set(head, { clearProps: "transform" });
       };
     });
 
