@@ -41,10 +41,20 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-soft: cubic-bezier(0.33, 1, 0.68, 1);
 
+  /* The deep surface behind every dark page — New UI, Ask AI and the gallery.
+     Defined once here (and as RGB parts so it can be used with alpha) because
+     it was previously a near-black literal repeated in ~30 places, which made
+     it impossible to change the site's base colour in one edit. */
+  --dark-surface: #0a2226;
+  --dark-surface-rgb: 10, 34, 38;
+
   /* Type system — self-hosted via @fontsource, imported in layout.tsx */
   --font-sans: "Inter Variable", Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-display: "Archivo Variable", Archivo, "Helvetica Neue", Arial, sans-serif;
   --font-serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+  /* New UI section headings only. Loaded by src/app/new-ui/page.tsx, so the
+     old site never downloads it. */
+  --font-script: "Lobster", "Brush Script MT", cursive;
   --font-mono: "JetBrains Mono Variable", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 
@@ -3617,16 +3627,44 @@ footer {
   }
 }
 
+/* The fixed header renders outside .new-ui-page (ScrollSmoother requirement),
+   so the New UI palette has to live on a wrapper that contains both. */
+.new-ui-root,
 .new-ui-page {
   --new-ui-accent: #7dd3fc;
   --new-ui-accent-strong: #38bdf8;
   --new-ui-accent-rgb: 125, 211, 252;
   --new-ui-accent-ink: #062a3a;
 
+  /* Shared breathing room above every New UI section's heading, and the
+     heading scale itself. Single source of truth so the rhythm stays
+     consistent across the page instead of drifting per section. */
+  --new-ui-section-top: clamp(5rem, 11vw, 10rem);
+  --new-ui-heading-size: clamp(3.25rem, 8vw, 6.5rem);
+  --new-ui-heading-gap: 4rem;
+}
+
+/* ScrollSmoother makes #smooth-wrapper `position: fixed`, which lifts the page
+   off the document background. Without this the light global body colour shows
+   through during refreshes and overscroll. */
+.new-ui-root {
+  background: var(--dark-surface);
+}
+
+#smooth-wrapper {
+  overflow: hidden;
+  background: var(--dark-surface);
+}
+
+#smooth-content {
+  will-change: transform;
+}
+
+.new-ui-page {
   position: relative;
   min-height: 100svh;
   padding-top: var(--nav-height);
-  background: #06090a;
+  background: var(--dark-surface);
   color: #f4faf7;
 }
 
@@ -3654,7 +3692,7 @@ footer {
 }
 
 .new-ui-header-revealed {
-  background: rgba(6, 9, 10, 0.5);
+  background: rgba(var(--dark-surface-rgb), 0.5);
   backdrop-filter: blur(14px) saturate(130%);
 }
 
@@ -3729,7 +3767,7 @@ footer {
 .new-ui-hero-video-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(6, 9, 10, 0.55), rgba(6, 9, 10, 0.75) 60%, #06090a);
+  background: linear-gradient(180deg, rgba(var(--dark-surface-rgb), 0.55), rgba(var(--dark-surface-rgb), 0.75) 60%, var(--dark-surface));
 }
 
 .new-ui-glow {
@@ -3756,14 +3794,28 @@ footer {
   background: rgba(244, 250, 247, 0.07);
 }
 
+/* The light streak running along each background line. A near-white core
+   inside the accent colour, with a layered glow. The glow is a drop-shadow
+   filter rather than box-shadow so it follows the streak's fading ends
+   instead of drawing a hard-edged glowing rectangle. */
 .new-ui-line-pulse {
   position: absolute;
   left: 50%;
-  width: 3px;
-  height: 180px;
+  width: 4px;
+  height: 220px;
   transform: translateX(-50%);
-  background: linear-gradient(to bottom, transparent, rgba(var(--new-ui-accent-rgb), 0.95), transparent);
-  box-shadow: 0 0 14px 2px rgba(var(--new-ui-accent-rgb), 0.7);
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(var(--new-ui-accent-rgb), 0.9) 30%,
+    #e6fbff 50%,
+    rgba(var(--new-ui-accent-rgb), 0.9) 70%,
+    transparent
+  );
+  filter:
+    drop-shadow(0 0 4px rgba(var(--new-ui-accent-rgb), 1))
+    drop-shadow(0 0 12px rgba(var(--new-ui-accent-rgb), 0.85))
+    drop-shadow(0 0 28px rgba(var(--new-ui-accent-rgb), 0.55));
   border-radius: 999px;
 }
 
@@ -3828,8 +3880,11 @@ footer {
 }
 
 .new-ui-name {
-  font-family: var(--font-serif);
-  font-style: italic;
+  font-family: var(--font-script);
+  /* Lobster is a single upright weight: slanting it again would fake an
+     italic on top of a script. */
+  font-style: normal;
+  font-weight: 400;
   font-size: clamp(3rem, 8vw, 6.5rem);
   line-height: 0.98;
   color: #f4faf7;
@@ -3878,7 +3933,7 @@ footer {
 
 .new-ui-secondary:hover {
   background: #f4faf7;
-  color: #06090a;
+  color: var(--dark-surface);
   transform: translateY(-2px);
 }
 
@@ -3889,11 +3944,10 @@ footer {
   place-items: center;
   justify-self: end;
   align-self: end;
-  width: min(100%, 320px);
-  aspect-ratio: 4 / 5;
-  border: 1px solid rgba(244, 250, 247, 0.18);
+  width: min(100%, 540px);
+  aspect-ratio: 16 / 9;
   border-radius: 1.25rem;
-  background: linear-gradient(160deg, rgba(var(--new-ui-accent-rgb), 0.14), rgba(6, 9, 10, 0.6));
+  background: linear-gradient(160deg, rgba(var(--new-ui-accent-rgb), 0.14), rgba(var(--dark-surface-rgb), 0.6));
   overflow: hidden;
 }
 
@@ -3911,28 +3965,77 @@ footer {
   color: rgba(244, 250, 247, 0.85);
 }
 
-.new-ui-about,
-.new-ui-awards {
+.new-ui-about {
   position: relative;
   z-index: 1;
-  padding: 2rem clamp(1.5rem, 6vw, 5rem) 6rem;
+  /* Generous top padding does double duty: it gives the hero video room to
+     breathe before the About content starts, and it widens the document gap
+     between the hero card and the About card — which is what raises the
+     ceiling on the portrait flight's scroll range. See portrait-scroll-link. */
+  padding: var(--new-ui-section-top) clamp(1.5rem, 6vw, 5rem) 16rem;
+}
+
+.new-ui-awards {
+  position: relative;
+  /* The layout is translated beyond the section's normal box during its
+     pinned rise. Keep this chapter above the following section so Services
+     cannot mask the lower half of the cards before they enter the viewport. */
+  z-index: 2;
+  /* flow-root makes this a block formatting context, which stops the layout's
+     negative margin-bottom (the --awards-lift compensation) from collapsing
+     THROUGH this section. With padding-bottom at 0 on desktop, that margin was
+     escaping to become the section's own margin: Services moved up 498px but
+     this box did not shrink, so the two overlapped by 498px — and with this
+     section's higher z-index and opaque background, it painted straight over
+     the "Services I Offer" heading. */
+  display: flow-root;
+  background: var(--dark-surface);
+  padding: var(--new-ui-section-top) clamp(1.5rem, 6vw, 5rem) 6rem;
+}
+
+@media (min-width: 901px) {
+  .new-ui-awards {
+    padding-bottom: 0;
+  }
 }
 
 .new-ui-about-heading {
-  font-family: var(--font-serif);
-  font-style: italic;
+  font-family: var(--font-script);
+  /* Lobster is a single upright weight: slanting it again would fake an
+     italic on top of a script. */
+  font-style: normal;
+  font-weight: 400;
   text-align: center;
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-size: var(--new-ui-heading-size);
   color: #f4faf7;
-  margin-bottom: 2.5rem;
+  margin-bottom: var(--new-ui-heading-gap);
+}
+
+/* Below the content (z 1 vs 2): as the content rises into the pinned
+   heading it passes OVER it, and the heading dims (awards-pin-sequence.tsx). */
+.new-ui-awards-heading {
+  position: relative;
+  z-index: 1;
+  /* Larger than the other section headings. "Awards & Experiences" is about
+     8.45em wide in Lobster, so 10vw keeps it on one line (~85% of the
+     screen) on desktop; it only wraps on phones, as before. */
+  font-size: clamp(3.25rem, 10vw, 9rem);
+}
+
+.new-ui-awards-heading-text {
+  display: block;
 }
 
 .new-ui-about-grid {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr) 280px;
-  gap: 1.5rem;
+  /* Proportional rather than fixed side columns. With fixed 260px sides the
+     centre card got squeezed to 300px at 1024px wide — widening the sides
+     stole from the middle. Ratios let all three scale together, and
+     .new-ui-about-main's max-width still caps the centre on wide screens. */
+  grid-template-columns: minmax(0, 0.62fr) minmax(0, 1.4fr) minmax(0, 0.62fr);
+  gap: 2rem;
   align-items: start;
-  max-width: 1200px;
+  max-width: 1320px;
   margin-inline: auto;
 }
 
@@ -3940,7 +4043,7 @@ footer {
 .new-ui-stat-card {
   border: 1px solid rgba(244, 250, 247, 0.14);
   border-radius: 1rem;
-  background: linear-gradient(160deg, rgba(var(--new-ui-accent-rgb), 0.08), rgba(6, 9, 10, 0.6));
+  background: linear-gradient(160deg, rgba(var(--new-ui-accent-rgb), 0.08), rgba(var(--dark-surface-rgb), 0.6));
   padding: 1.5rem;
 }
 
@@ -3962,7 +4065,7 @@ footer {
   height: 64px;
   border: 1px solid rgba(244, 250, 247, 0.14);
   border-radius: 0.75rem;
-  background: rgba(6, 9, 10, 0.5);
+  background: rgba(var(--dark-surface-rgb), 0.5);
   font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 700;
@@ -3971,23 +4074,29 @@ footer {
 }
 
 .new-ui-about-main {
+  max-width: 540px;
+  /* The centre grid column is `1fr`, so on wide viewports it grows well past
+     this card's 460px cap — without this the card sits flush to the column's
+     left edge and reads as ~186px off-centre at 1600px wide. */
+  margin-inline: auto;
   border: 1px solid rgba(244, 250, 247, 0.14);
   border-radius: 1.25rem;
   overflow: hidden;
-  background: rgba(6, 9, 10, 0.4);
+  background: rgba(var(--dark-surface-rgb), 0.4);
 }
 
 .new-ui-about-portrait {
   position: relative;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  background: linear-gradient(160deg, rgba(var(--new-ui-accent-rgb), 0.16), rgba(6, 9, 10, 0.7));
+  background: linear-gradient(160deg, rgba(var(--new-ui-accent-rgb), 0.16), rgba(var(--dark-surface-rgb), 0.7));
   display: grid;
   place-items: center;
 }
 
 .new-ui-about-portrait .new-ui-portrait-mark {
-  font-size: 2.5rem;
+  font-size: 3rem;
+  color: #f4faf7;
 }
 
 .new-ui-about-copy {
@@ -4035,12 +4144,20 @@ footer {
 }
 
 .new-ui-awards-layout {
+  position: relative;
+  z-index: 2;
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr) 260px;
   align-items: start;
   gap: 1.5rem;
   max-width: 1200px;
   margin-inline: auto;
+  /* The pinned sequence translates this block up over the heading to centre it
+     (see awards-pin-sequence.tsx). A transform does not shrink the layout box,
+     so without this the section would keep a hole the height of that lift.
+     --awards-lift is published by the animation and is 0 when it is not
+     running, which keeps reduced-motion and mobile on the untouched layout. */
+  margin-bottom: calc(-1 * var(--awards-lift, 0px));
 }
 
 .new-ui-awards-intro {
@@ -4056,7 +4173,7 @@ footer {
   gap: 2rem;
   border: 1px solid rgba(244, 250, 247, 0.14);
   border-radius: 1.25rem;
-  background: linear-gradient(160deg, rgba(var(--new-ui-accent-rgb), 0.08), rgba(6, 9, 10, 0.75));
+  background: linear-gradient(160deg, rgba(var(--new-ui-accent-rgb), 0.08), rgba(var(--dark-surface-rgb), 0.75));
   padding: 2rem;
 }
 
@@ -4104,7 +4221,7 @@ footer {
   overflow: hidden;
   border: 1px solid rgba(244, 250, 247, 0.18);
   border-radius: 1.25rem;
-  background: linear-gradient(160deg, rgba(var(--new-ui-accent-rgb), 0.14), rgba(6, 9, 10, 0.6));
+  background: linear-gradient(160deg, rgba(var(--new-ui-accent-rgb), 0.14), rgba(var(--dark-surface-rgb), 0.6));
   display: grid;
   place-items: center;
 }
@@ -4127,16 +4244,208 @@ footer {
 .new-ui-services {
   position: relative;
   z-index: 1;
-  padding: 2rem clamp(1.5rem, 6vw, 5rem) 8rem;
+  background: var(--dark-surface);
+  padding: var(--new-ui-section-top) clamp(1.5rem, 6vw, 5rem) 8rem;
+}
+
+@media (min-width: 901px) {
+  .new-ui-services {
+    padding-top: clamp(3.5rem, 6vw, 5rem);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Services I Offer — horizontal showcase (desktop + motion only)
+
+   Switched on by services-showcase.tsx adding .is-showcase from inside the
+   same matchMedia query that drives the animation, so the layout and the
+   script can never disagree about which mode is active. Without the class
+   (mobile, reduced motion, no JS) the section keeps its normal layout.
+
+   The section becomes a full-screen stage that pins. The heading sits at its
+   exact vertical centre, so it rises up the screen and stops in the middle —
+   the same entrance as Awards & Experiences. The cards run as one horizontal
+   track in the band BELOW the heading and are slid across from the right
+   while the stage is pinned, so they never rise into the heading.
+--------------------------------------------------------------------------- */
+.new-ui-services.is-showcase {
+  /* Heading line-height is 1.5, so half its box is 0.75 × its font size. */
+  --svc-heading-half: calc(0.75 * var(--new-ui-heading-size));
+  --svc-edge: clamp(1.5rem, 6vw, 5rem);
+  /* How much sooner (in px of scrolling) the heading appears than a clean
+     hand-off would allow. One wheel notch is ~100px, so 200px = 2 scrolls. */
+  --svc-appear-early: 200px;
+
+  height: 100svh;
+  padding: 0;
+  overflow: hidden;
+  /* The hand-off from Awards. With the heading at the stage's centre, a gap of
+     half a screen plus half a heading makes it reach the bottom of the
+     viewport exactly as Awards' bottom edge clears the top — a clean hand-off,
+     but 7.8 scrolls after the Awards pin ends. Trimming --svc-appear-early off
+     it brings the heading in 2 scrolls sooner; the trade-off is that the tail
+     of the last Awards card is still at the top of the screen for those 2
+     scrolls. Set it to 0px for the clean hand-off again. */
+  margin-top: calc(50svh + var(--svc-heading-half) - var(--svc-appear-early));
+}
+
+.new-ui-services.is-showcase .new-ui-services-main-heading {
+  position: absolute;
+  inset-inline: 0;
+  /* Centred with `top`, not translateY(-50%): the heading's transform is
+     owned by the animation (it climbs off the top as the cards arrive), and
+     GSAP would fold a -50% into a fixed pixel value and drop it. */
+  /* Much larger than the other headings. Centred on its own size; the card
+     bands keep using --svc-heading-half (the normal heading size), which is
+     safe because card 01 is held to the right of the text until the heading
+     has left the screen (services-showcase.tsx measures it live). */
+  --svc-title-size: clamp(4rem, 12vw, 11rem);
+  font-size: var(--svc-title-size);
+  line-height: 1.3;
+  top: calc(50% - 0.65 * var(--svc-title-size));
+  margin: 0;
+}
+
+/* Zig-zag: the stage has two bands of equal height — one ABOVE the centred
+   heading and one BELOW it — and the cards alternate between them (01 above,
+   02 below, 03 above, 04 below). Each card also starts partway under the one
+   before it, so the row reads as a single zig-zag line rather than two
+   separate rows. The progress line zig-zags between them (see below). */
+.new-ui-services.is-showcase .new-ui-services-list {
+  /* Heading ↔ band, and band ↔ screen edge. The edge margin is at least the
+     fixed nav bar's height: the bar slides back in whenever the user scrolls
+     up, and with a smaller margin it covered the top of the upper-band cards.
+     Applied to both edges so the two bands stay mirror images. */
+  --svc-gap: clamp(1.25rem, 3.5svh, 2.5rem);
+  --svc-outer: max(clamp(1.5rem, 5svh, 3rem), calc(var(--nav-height) + 0.5rem));
+  /* Each band is what is left of half the screen once the heading, the gap
+     and the outer margin are taken out — identical above and below. */
+  --svc-band: calc(50svh - var(--svc-heading-half) - var(--svc-gap) - var(--svc-outer));
+  /* How far each card tucks back under the previous one. */
+  --svc-interleave: clamp(8rem, 18vw, 16rem);
+
+  position: absolute;
+  left: 0;
+  top: var(--svc-outer);
+  bottom: var(--svc-outer);
+  display: flex;
+  /* Card 01 is leftmost: the track slides right-to-left, so the leftmost card
+     is the first to enter from the right edge. */
+  flex-direction: row;
+  gap: clamp(2rem, 4vw, 3.5rem);
+  width: max-content;
+  max-width: none;
+  margin: 0;
+  padding-inline: var(--svc-edge);
+  will-change: transform;
+}
+
+/* Beats the staggered nth-child offsets used by the vertical layout
+   (0,3,0 against their 0,2,0). */
+.new-ui-services.is-showcase .new-ui-service-item {
+  height: var(--svc-band);
+  margin: 0;
+}
+
+/* Each following card tucks back under the one to its left. */
+.new-ui-services.is-showcase .new-ui-service-item + .new-ui-service-item {
+  margin-left: calc(-1 * var(--svc-interleave));
+}
+
+/* Upper band: pinned to the top of the stage, content hugging the heading. */
+.new-ui-services.is-showcase .new-ui-service-item:nth-child(odd) {
+  align-self: flex-start;
+  align-items: flex-end;
+}
+
+/* Lower band: pinned to the bottom, content hugging the heading from below. */
+.new-ui-services.is-showcase .new-ui-service-item:nth-child(even) {
+  align-self: flex-end;
+  align-items: flex-start;
+}
+
+.new-ui-services.is-showcase .new-ui-service-item:nth-child(even) .new-ui-service-intro {
+  padding-top: 2.25rem;
+  padding-bottom: 0;
+}
+
+.new-ui-services.is-showcase .new-ui-service-card {
+  /* Sized to its band: the band height is what keeps cards in their half. */
+  height: 100%;
+  min-height: 0;
+  max-height: 320px;
+  gap: 1rem;
+  /* Bands shrink on shorter screens (~204px at 768px tall), so padding and the
+     stack line scale with viewport height; at ~900px+ both are back to their
+     normal sizes. Without this, stacks that wrap to three lines overflowed. */
+  padding: clamp(1.1rem, 2.6svh, 1.75rem);
+}
+
+.new-ui-services.is-showcase .new-ui-service-stat strong {
+  font-size: clamp(1.1rem, 2.9svh, 1.5rem);
+}
+
+/* Progress line: a zig-zag threaded through the cards — from the screen's
+   left edge up to card 01's bottom, down to card 02's top, up to 03, down to
+   04, then out to the screen's right edge. It lives in the middle strip
+   between the two bands, so it never crosses a card.
+
+   The path is drawn in JS (services-showcase.tsx) from the cards' measured
+   positions, moves with the track, and is revealed with a dash offset once
+   the heading has left the screen. The SVG is a 1×1 box with overflow
+   visible: the path is in stage coordinates, and a sized box would only
+   add a hit area. Hidden outside showcase mode. */
+.new-ui-services-line {
+  display: none;
+}
+
+.new-ui-services.is-showcase .new-ui-services-line {
+  display: block;
+  position: absolute;
+  will-change: transform, opacity;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  overflow: visible;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.new-ui-services-line path {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: butt;
+}
+
+.new-ui-services-line-base {
+  stroke: rgba(244, 250, 247, 0.08);
+}
+
+.new-ui-services-line-fill {
+  stroke: var(--new-ui-accent);
+}
+
+/* Blurred copy under the fill: the glow. Its opacity rises as the line
+   draws (services-showcase.tsx). */
+.new-ui-services-line .new-ui-services-line-glow {
+  stroke: var(--new-ui-accent);
+  stroke-width: 7;
+  opacity: 0;
 }
 
 .new-ui-services-heading {
-  font-family: var(--font-serif);
-  font-style: italic;
+  font-family: var(--font-script);
+  font-style: normal;
+  font-weight: 400;
   text-align: center;
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
-  color: rgba(244, 250, 247, 0.45);
-  margin-bottom: 3rem;
+  font-size: var(--new-ui-heading-size);
+  /* Full brightness to match every other section heading. This used to be
+     45% white, which read as muted grey once the background moved from
+     near-black to the lighter teal (--dark-surface). */
+  color: #f4faf7;
+  margin-bottom: var(--new-ui-heading-gap);
 }
 
 .new-ui-services-list {
@@ -4174,33 +4483,98 @@ footer {
 .new-ui-work {
   position: relative;
   z-index: 1;
-  padding: 4rem clamp(1.5rem, 6vw, 5rem) 8rem;
+  padding: var(--new-ui-section-top) clamp(1.5rem, 6vw, 5rem) 8rem;
 }
 
 .new-ui-work-steps {
   display: flex;
   align-items: flex-start;
-  gap: 1.5rem;
-  max-width: 1200px;
+  gap: 2rem;
+  max-width: 1320px;
   margin-inline: auto;
+  /* A little extra air under the heading, on top of its own margin. Padding,
+     not margin: a margin-top here collapses into the heading's 4rem
+     margin-bottom and the larger one wins, so it added nothing. */
+  padding-top: 5rem;
+}
+
+/* Work Procedure step cards. A defined glass card (border, accent-tinted
+   gradient, lit top edge) with a large outlined step number in the corner,
+   the "Step #n" label as a pill up top and the title + description anchored
+   at the bottom. Their transform belongs to work-steps-spread.tsx (the
+   fan-out), so hover only touches border and shadow. */
+.new-ui-work-steps {
+  counter-reset: work-step;
 }
 
 .new-ui-step-card {
+  counter-increment: work-step;
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.85rem;
-  min-height: 380px;
-  padding: 2rem;
-  border-radius: 1.25rem;
-  text-align: center;
+  align-items: flex-start;
+  gap: 1rem;
+  /* A fixed 9:10 shape — just taller than wide — so the cards keep the same
+     proportions at every width (~420×465 on wide screens). The min-height
+     guarantees room for the content when the cards get narrow. */
+  aspect-ratio: 9 / 10;
+  min-height: 310px;
+  padding: clamp(1.75rem, 2.6vw, 2.5rem);
+  border: 1px solid rgba(244, 250, 247, 0.14);
+  border-radius: 1.5rem;
+  text-align: left;
   overflow: hidden;
-  background-color: #0b1e1d;
-  background-image:
-    radial-gradient(circle at 50% 38%, rgba(var(--new-ui-accent-rgb), 0.5), transparent 60%),
-    repeating-linear-gradient(90deg, rgba(244, 250, 247, 0.04) 0 1px, transparent 1px 36px);
+  /* Opaque: the fan-out starts with all three cards stacked on the middle
+     one, and a see-through card let the pills and numbers of the cards
+     behind show through and jumble. The solid base colour under the tint
+     means the front card fully covers the others. */
+  background:
+    radial-gradient(120% 70% at 100% 0%, rgba(var(--new-ui-accent-rgb), 0.3), transparent 60%),
+    radial-gradient(90% 60% at 0% 100%, rgba(45, 212, 191, 0.12), transparent 65%),
+    linear-gradient(165deg, rgba(var(--new-ui-accent-rgb), 0.1), rgba(var(--dark-surface-rgb), 0.92))
+    #0b2428;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 30px 60px -30px rgba(0, 0, 0, 0.6);
+  transition:
+    border-color 260ms ease,
+    box-shadow 260ms ease;
+}
+
+/* Lit top edge. */
+.new-ui-step-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 12%;
+  right: 12%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(var(--new-ui-accent-rgb), 0.9), transparent);
+  box-shadow: 0 0 12px rgba(var(--new-ui-accent-rgb), 0.6);
+}
+
+/* Big outlined step number, top-right. */
+.new-ui-step-card::after {
+  content: "0" counter(work-step);
+  position: absolute;
+  top: 1.25rem;
+  right: 1.75rem;
+  font-family: var(--font-display);
+  font-size: clamp(5rem, 8vw, 7.5rem);
+  font-weight: 800;
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(var(--new-ui-accent-rgb), 0.45);
+  pointer-events: none;
+}
+
+.new-ui-step-card:hover {
+  border-color: rgba(var(--new-ui-accent-rgb), 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 30px 60px -30px rgba(0, 0, 0, 0.6),
+    0 0 40px rgba(var(--new-ui-accent-rgb), 0.18);
 }
 
 .new-ui-step-card:nth-child(2) {
@@ -4208,20 +4582,33 @@ footer {
 }
 
 .new-ui-step-card span {
-  font-size: 0.9rem;
-  color: rgba(244, 250, 247, 0.75);
+  position: relative;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid rgba(var(--new-ui-accent-rgb), 0.4);
+  border-radius: 999px;
+  background: rgba(var(--new-ui-accent-rgb), 0.08);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--new-ui-accent);
 }
 
 .new-ui-step-card h3 {
-  font-size: 2rem;
+  position: relative;
+  margin-top: auto;
+  font-size: clamp(2rem, 3vw, 2.5rem);
   font-weight: 800;
+  line-height: 1.1;
   color: #f4faf7;
 }
 
 .new-ui-step-card p {
-  max-width: 220px;
-  color: rgba(244, 250, 247, 0.78);
-  font-size: 0.95rem;
+  position: relative;
+  max-width: 28ch;
+  color: rgba(244, 250, 247, 0.75);
+  font-size: 1.05rem;
+  line-height: 1.55;
 }
 
 @media (max-width: 860px) {
@@ -4234,32 +4621,78 @@ footer {
   }
 }
 
+/* Full width: the tiles spread across the whole page like the reference
+   moodboard. Only the heading row keeps the usual 1200px column. */
 .new-ui-featured {
   position: relative;
   z-index: 1;
-  padding: 4rem clamp(1.5rem, 6vw, 5rem) 8rem;
+  padding: var(--new-ui-section-top) clamp(1.5rem, 6vw, 5rem) 8rem;
+}
+
+.new-ui-featured > .new-ui-featured-head {
   max-width: 1200px;
   margin-inline: auto;
 }
 
+/* "Being written" headings (heading-write-on.tsx). A left→right mask whose
+   soft trailing edge is the pen: --write is where the ink has reached, and the
+   15% feather fades the letters in just behind it. The default of 115% shows
+   the line in full, so without JS or with reduced motion nothing is hidden.
+   The inline padding (cancelled by the negative margin) widens the mask's box
+   so the italic letters' overhangs aren't clipped. */
+.new-ui-write-line {
+  --write: 115%;
+  display: inline-block;
+  padding-inline: 0.2em;
+  margin-inline: -0.2em;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    #000 calc(var(--write) - 15%),
+    transparent var(--write)
+  );
+  mask-image: linear-gradient(
+    90deg,
+    #000 calc(var(--write) - 15%),
+    transparent var(--write)
+  );
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+.is-write-on .new-ui-write-line {
+  --write: 0%;
+}
+
+/* Heading centred, "Work" set back under the end of "Featured", with the
+   category list hung off the right edge at the heading's middle. The two
+   outer 1fr columns are what keep the heading truly centred however wide the
+   list is. */
 .new-ui-featured-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
   gap: 2rem;
-  margin-bottom: 3rem;
+  margin-bottom: 1.5rem;
 }
 
 .new-ui-featured-heading {
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  font-size: calc(var(--new-ui-heading-size) * 1.15);
   line-height: 1.05;
 }
 
+.new-ui-featured-heading span:last-child {
+  align-self: flex-end;
+}
+
 .new-ui-featured-categories {
+  grid-column: 3;
+  justify-self: end;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding-top: 0.75rem;
   font-size: 1.05rem;
 }
 
@@ -4280,10 +4713,30 @@ footer {
   background: var(--new-ui-accent);
 }
 
+/* Scattered tiles: large and low on the left, small and high in the middle,
+   mid-size and lowest on the right. A 12-column grid gives each its own width
+   and gap; the vertical stagger is plain margin-top. */
+/* Scattered tiles, placed like the reference moodboard. Each tile's spot
+   comes from `featuredSlots` in page.tsx as CSS variables — left, top and
+   width in % of the grid's width (cqw), plus its shape — and the grid's own
+   height (--grid-h) is the lowest tile's bottom edge. Using the grid's width
+   for vertical positions too keeps the whole arrangement in proportion at
+   every screen size. */
 .new-ui-featured-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
+  position: relative;
+  container-type: inline-size;
+  height: calc(var(--grid-h) * 1cqw);
+}
+
+.new-ui-featured-item {
+  position: absolute;
+  left: calc(var(--slot-x) * 1cqw);
+  top: calc(var(--slot-y) * 1cqw);
+  width: calc(var(--slot-w) * 1cqw);
+}
+
+.new-ui-featured-item .new-ui-featured-card {
+  aspect-ratio: var(--slot-ratio);
 }
 
 .new-ui-featured-card {
@@ -4292,24 +4745,60 @@ footer {
   flex-direction: column;
   justify-content: flex-end;
   gap: 0.35rem;
-  min-height: 220px;
-  padding: 1.5rem;
-  border: 1px solid rgba(244, 250, 247, 0.14);
-  border-radius: 1rem;
+  aspect-ratio: 16 / 10;
+  padding: 1.25rem;
   overflow: hidden;
-  background: rgba(6, 9, 10, 0.5);
-  transition: transform 220ms var(--ease-out), border-color 220ms ease;
+  background: var(--featured-art);
 }
 
-.new-ui-featured-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(var(--new-ui-accent-rgb), 0.6);
+/* Per-project artwork and panel colour, shared by the tiles and the showcase
+   panels below them. Swap --featured-art for url(...) once there are real
+   project screenshots. */
+.new-ui-art-skillchain {
+  /* Gold, warm. */
+  --showcase-panel: #5c430f;
+  --featured-art:
+    radial-gradient(circle at 62% 38%, rgba(255, 196, 84, 0.85), transparent 42%),
+    radial-gradient(circle at 20% 80%, rgba(196, 120, 24, 0.7), transparent 55%),
+    linear-gradient(135deg, #3a2406, #140b02);
 }
 
+.new-ui-art-workstack {
+  /* Neon pink/blue. */
+  --showcase-panel: #34205a;
+  --featured-art:
+    radial-gradient(circle at 30% 25%, rgba(255, 56, 160, 0.8), transparent 45%),
+    radial-gradient(circle at 70% 75%, rgba(60, 150, 255, 0.85), transparent 50%),
+    linear-gradient(160deg, #1b0b2a, #06121f);
+}
+
+.new-ui-art-soulvoyage {
+  /* Deep red. */
+  --showcase-panel: #5e1320;
+  --featured-art:
+    radial-gradient(circle at 50% 45%, rgba(255, 54, 54, 0.75), transparent 40%),
+    radial-gradient(circle at 85% 20%, rgba(150, 20, 60, 0.7), transparent 45%),
+    linear-gradient(135deg, #2a0508, #0c0203);
+}
+
+/* Small tiles get tighter padding and type. */
+.new-ui-featured-item.is-compact .new-ui-featured-card {
+  padding: 1rem;
+}
+
+/* Fine scanline texture over the art so the tiles read as imagery rather than
+   flat buttons, plus a bottom fade to keep the title legible. */
 .new-ui-featured-glow {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 30% 20%, rgba(var(--new-ui-accent-rgb), 0.35), transparent 65%);
+  background:
+    linear-gradient(to top, rgba(0, 0, 0, 0.65), transparent 55%),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 4px);
+  transition: opacity 260ms ease;
+}
+
+.new-ui-featured-card:hover .new-ui-featured-glow {
+  opacity: 0.55;
 }
 
 .new-ui-featured-card strong {
@@ -4323,23 +4812,231 @@ footer {
 .new-ui-featured-card span {
   position: relative;
   font-size: 0.85rem;
-  color: rgba(244, 250, 247, 0.68);
+  color: rgba(244, 250, 247, 0.72);
+}
+
+.new-ui-featured-item.is-compact .new-ui-featured-card strong {
+  font-size: 1.05rem;
+}
+
+.new-ui-featured-item.is-compact .new-ui-featured-card span {
+  font-size: 0.75rem;
 }
 
 @media (max-width: 900px) {
   .new-ui-featured-head {
-    flex-direction: column;
+    grid-template-columns: 1fr;
+    justify-items: start;
   }
 
-  .new-ui-featured-grid {
-    grid-template-columns: 1fr;
+  .new-ui-featured-heading,
+  .new-ui-featured-categories {
+    grid-column: 1;
+    justify-self: start;
   }
+
+  /* One column: the moodboard placement is desktop-only. */
+  .new-ui-featured-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    height: auto;
+  }
+
+  .new-ui-featured-item {
+    position: static;
+    width: auto;
+  }
+
+  .new-ui-featured-item .new-ui-featured-card {
+    aspect-ratio: 16 / 9;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Featured Work — zoom-in panels (animated by featured-showcase.tsx)
+
+   While the section is pinned, each project in turn grows out of its tile
+   into a large case-study panel — coloured frame, artwork inset in the
+   middle, the title overlapping its top-left corner, tagline bottom-right —
+   holds, then shrinks back into the tile.
+
+   The panels are overlays on a stage covering the section. Their position,
+   size and inner layout are driven entirely from JS; here they are only
+   laid out at the top-left and hidden, which is also exactly what you get
+   with no JS, reduced motion, or on small screens where the zoom is off.
+--------------------------------------------------------------------------- */
+.new-ui-showcase-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* Darkens everything behind the enlarged panel. Sized to the viewport by JS. */
+.new-ui-showcase-dim {
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: rgba(var(--dark-surface-rgb), 0.82);
+  opacity: 0;
+}
+
+.new-ui-showcase-card {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  overflow: hidden;
+  background: var(--showcase-panel, #0e5f68);
+  color: #f4faf7;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: auto;
+}
+
+/* Starts filling the whole card (= the tile's look) and is inset into the
+   frame as the panel grows. */
+.new-ui-showcase-media {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.new-ui-showcase-art {
+  position: absolute;
+  inset: 0;
+  background: var(--featured-art);
+}
+
+/* Same bottom fade + scanlines as the tiles' glow layer. */
+.new-ui-showcase-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to top, rgba(0, 0, 0, 0.65), transparent 55%),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 4px);
+}
+
+/* The tile's own title + tag; font sizes and padding are copied from the
+   tile at runtime so the first frame matches it exactly. */
+.new-ui-showcase-label {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.new-ui-showcase-label strong {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: #f4faf7;
+}
+
+.new-ui-showcase-label span {
+  color: rgba(244, 250, 247, 0.72);
+}
+
+.new-ui-showcase-title {
+  position: absolute;
+  top: 1.5%;
+  left: 2.5%;
+  z-index: 2;
+  font-family: var(--font-script);
+  font-size: clamp(3rem, 8vw, 7.5rem);
+  line-height: 1;
+  color: #f4faf7;
+  text-shadow: 0 6px 30px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+  opacity: 0;
+}
+
+.new-ui-showcase-meta {
+  position: absolute;
+  right: 3%;
+  bottom: 3%;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: max-content;
+  max-width: 24ch;
+  opacity: 0;
+}
+
+.new-ui-showcase-index,
+.new-ui-showcase-stack {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: rgba(244, 250, 247, 0.72);
+}
+
+.new-ui-showcase-tagline {
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 1.5vw, 1.3rem);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+/* Portfolio completion (portfolio-progress.tsx): a glowing line along the
+   top edge that fills as the page is scrolled. */
+.new-ui-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  height: 2px;
+  pointer-events: none;
+}
+
+.new-ui-progress-bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(var(--new-ui-accent-rgb), 0.35), var(--new-ui-accent), #e6fbff);
+  box-shadow: 0 0 10px rgba(var(--new-ui-accent-rgb), 0.8);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+/* "View" cursor badge (view-cursor.tsx). */
+.new-ui-view-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  width: 108px;
+  height: 108px;
+  border-radius: 50%;
+  background: rgba(58, 62, 64, 0.72);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 600;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.has-view-cursor [data-view-cursor],
+.has-view-cursor [data-view-cursor] * {
+  cursor: none;
+}
+
+/* Extra room between "Insights & Thoughts" and its cards. */
+.new-ui-insights-heading {
+  margin-bottom: calc(var(--new-ui-heading-gap) + 3rem);
 }
 
 .new-ui-insights {
   position: relative;
   z-index: 1;
-  padding: 4rem clamp(1.5rem, 6vw, 5rem) 8rem;
+  padding: var(--new-ui-section-top) clamp(1.5rem, 6vw, 5rem) 8rem;
 }
 
 .new-ui-insights-body {
@@ -4348,24 +5045,38 @@ footer {
   margin-inline: auto;
 }
 
+/* One row of three cards side by side (it was a 2-column grid, which left
+   the third card alone on a second row). */
 .new-ui-insights-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
+  align-items: stretch;
 }
 
+/* Same card treatment as the Services cards — tinted gradient, 1.25rem
+   corners — so the two sections read as one family. Tag pinned to the top,
+   title to the bottom. */
 .new-ui-insight-card {
   position: relative;
   overflow: hidden;
-  min-height: 260px;
-  padding: 1.5rem;
+  /* Tall, poster-like cards. */
+  min-height: clamp(360px, 48svh, 440px);
+  padding: 1.75rem;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  gap: 0.5rem;
+  justify-content: space-between;
+  gap: 2rem;
   border: 1px solid rgba(244, 250, 247, 0.14);
-  border-radius: 1rem;
-  background: rgba(6, 9, 10, 0.5);
+  border-radius: 1.25rem;
+  background: linear-gradient(165deg, rgba(var(--new-ui-accent-rgb), 0.22), rgba(var(--dark-surface-rgb), 0.85));
+  /* Border only: the card's transform belongs to the scroll reveal, and a CSS
+     transition on it would make the scrubbed motion lag behind the scroll. */
+  transition: border-color 220ms ease;
+}
+
+.new-ui-insight-card:hover {
+  border-color: rgba(var(--new-ui-accent-rgb), 0.55);
 }
 
 .new-ui-insight-glow {
@@ -4384,9 +5095,10 @@ footer {
 .new-ui-insight-card p {
   position: relative;
   color: #f4faf7;
-  font-size: 1.05rem;
-  font-weight: 600;
-  line-height: 1.4;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 @media (max-width: 900px) {
@@ -4413,7 +5125,7 @@ footer {
   padding: 1.75rem;
   border: 1px solid rgba(244, 250, 247, 0.14);
   border-radius: 1.25rem;
-  background: linear-gradient(165deg, rgba(var(--new-ui-accent-rgb), 0.3), rgba(6, 9, 10, 0.85));
+  background: linear-gradient(165deg, rgba(var(--new-ui-accent-rgb), 0.3), rgba(var(--dark-surface-rgb), 0.85));
 }
 
 .new-ui-service-top {
@@ -4508,34 +5220,102 @@ footer {
   position: relative;
   z-index: 1;
   overflow: hidden;
-  margin: 2rem clamp(1.5rem, 6vw, 5rem) 8rem;
-  max-width: 1200px;
-  margin-inline: auto;
-  padding: 3.5rem clamp(1.5rem, 5vw, 4rem);
+  /* Wider and taller than the 1200px content column so the card reads as
+     the page's closing moment; the width formula keeps a margin either side
+     on narrower screens. */
+  width: min(1360px, 100% - 2 * clamp(1rem, 3vw, 2.5rem));
+  /* Generous gap above: Insights & Thoughts' own 8rem bottom padding plus
+     this, so the closing card gets clear breathing room. */
+  margin: clamp(10rem, 24svh, 16rem) auto 8rem;
+  padding: clamp(4.5rem, 10vw, 8rem) clamp(1.75rem, 6vw, 5.5rem);
   border: 1px solid rgba(244, 250, 247, 0.14);
-  border-radius: 1.5rem;
+  border-radius: 1.75rem;
   background: linear-gradient(150deg, #0a2a2c, #05191b 55%, #061013);
 }
 
+/* Layered backdrop for the "Got an Idea?" card, replacing a single flat glow:
+   - drifting aurora: three soft colour pools (accent blue, teal, a hint of
+     violet) whose position slowly wanders,
+   - a fine grid that fades out from the top-right corner,
+   - a large faint ring peeking in from that corner,
+   - a lit top edge. */
 .new-ui-cta-texture {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: radial-gradient(circle at 75% 15%, rgba(var(--new-ui-accent-rgb), 0.28), transparent 55%);
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(45% 60% at 85% 5%, rgba(var(--new-ui-accent-rgb), 0.38), transparent 70%),
+    radial-gradient(40% 55% at 5% 95%, rgba(45, 212, 191, 0.24), transparent 70%),
+    radial-gradient(35% 45% at 55% 60%, rgba(129, 140, 248, 0.14), transparent 70%);
+  background-size: 140% 140%;
+  background-position: 0% 0%;
+  animation: new-ui-cta-aurora 18s ease-in-out infinite alternate;
+}
+
+.new-ui-cta-texture::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(244, 250, 247, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(244, 250, 247, 0.07) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(ellipse 70% 80% at 85% 0%, #000 10%, transparent 75%);
+  mask-image: radial-gradient(ellipse 70% 80% at 85% 0%, #000 10%, transparent 75%);
+}
+
+.new-ui-cta-texture::after {
+  content: "";
+  position: absolute;
+  top: -280px;
+  right: -180px;
+  width: 560px;
+  height: 560px;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--new-ui-accent-rgb), 0.28);
+  box-shadow:
+    0 0 60px rgba(var(--new-ui-accent-rgb), 0.12),
+    inset 0 0 80px rgba(var(--new-ui-accent-rgb), 0.12);
+}
+
+.new-ui-cta-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  z-index: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(var(--new-ui-accent-rgb), 0.9), transparent);
+  box-shadow: 0 0 12px rgba(var(--new-ui-accent-rgb), 0.6);
+}
+
+@keyframes new-ui-cta-aurora {
+  to {
+    background-position: 100% 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .new-ui-cta-texture {
+    animation: none;
+  }
 }
 
 .new-ui-cta-heading {
   position: relative;
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
-  margin-bottom: 2.5rem;
+  font-size: clamp(3rem, 7vw, 5.5rem);
+  margin-bottom: 3.75rem;
 }
 
 .new-ui-idea-form {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 1.75rem;
-  margin-bottom: 3rem;
+  gap: 2.25rem;
+  margin-bottom: 4.5rem;
 }
 
 .new-ui-idea-row {
@@ -4620,6 +5400,8 @@ footer {
 .new-ui-footer {
   position: relative;
   z-index: 1;
+  /* Lets the signature size itself from the footer's width (cqw). */
+  container-type: inline-size;
   padding: 3rem clamp(1.5rem, 6vw, 5rem) 0;
   background: transparent;
   border-top: none;
@@ -4646,27 +5428,63 @@ footer {
   color: #f4faf7;
 }
 
+/* Social buttons: brand icons (social-icons.tsx) on dark glass tiles tinted
+   with the accent — the same treatment as the page's cards. On hover the
+   border and icon light up in the accent with a soft glow, like the footer
+   links. */
 .new-ui-footer-social {
   display: flex;
-  gap: 0.6rem;
+  flex-wrap: wrap;
+  gap: 0.85rem;
 }
 
 .new-ui-footer-social a {
   display: grid;
   place-items: center;
-  width: 2.1rem;
-  height: 2.1rem;
-  border-radius: 0.5rem;
-  background: #f4faf7;
-  color: #06090a;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 700;
-  transition: background 220ms ease;
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid rgba(244, 250, 247, 0.16);
+  border-radius: 0.75rem;
+  background: linear-gradient(
+    150deg,
+    rgba(var(--new-ui-accent-rgb), 0.22),
+    rgba(var(--dark-surface-rgb), 0.85)
+  );
+  color: #f4faf7;
+  transition:
+    color 220ms ease,
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    transform 220ms var(--ease-out);
 }
 
-.new-ui-footer-social a:hover {
-  background: var(--new-ui-accent);
+.new-ui-footer-social svg {
+  width: 1.4rem;
+  height: 1.4rem;
+  stroke-width: 2;
+}
+
+/* The brand marks are solid shapes. The old site's global `svg` rule turns
+   every icon into an outline (fill: none; stroke) — undo that for them. The
+   envelope is a line icon and keeps the stroke. */
+.new-ui-footer-social svg[fill="currentColor"] {
+  fill: currentColor;
+  stroke: none;
+}
+
+.new-ui-footer-social a:hover,
+.new-ui-footer-social a:focus-visible {
+  color: var(--new-ui-accent);
+  border-color: rgba(var(--new-ui-accent-rgb), 0.7);
+  box-shadow:
+    0 0 18px rgba(var(--new-ui-accent-rgb), 0.35),
+    inset 0 0 12px rgba(var(--new-ui-accent-rgb), 0.15);
+  transform: translateY(-2px);
+}
+
+.new-ui-footer-social a:hover svg,
+.new-ui-footer-social a:focus-visible svg {
+  filter: drop-shadow(0 0 6px rgba(var(--new-ui-accent-rgb), 0.8));
 }
 
 .new-ui-footer-nav {
@@ -4680,7 +5498,9 @@ footer {
 .new-ui-footer-legal {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  /* Roomier than the nav column's gap: these are plain text links with no
+     44px tap-height padding of their own, so they sat tightly stacked. */
+  gap: 1.6rem;
   font-weight: 600;
   color: #f4faf7;
 }
@@ -4703,23 +5523,55 @@ footer {
   justify-self: end;
 }
 
-.new-ui-footer-watermark {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-size: clamp(3rem, 10vw, 8rem);
-  line-height: 1;
-  color: rgba(244, 250, 247, 0.12);
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
+/* Footer links glow in the accent on hover, like the rest of the page.
+   These selectors outrank the old site's `nav a` / `nav a:hover` rules,
+   which made the links dim grey at rest and near-black (--ink, meant for
+   the old light theme) on hover. */
+.new-ui-footer-nav a,
+.new-ui-footer-legal a,
+.new-ui-footer-top-link {
+  color: rgba(244, 250, 247, 0.82);
+  transition:
+    color 220ms ease,
+    text-shadow 220ms ease;
 }
 
-.new-ui-footer-bottom {
-  display: flex;
-  justify-content: center;
-  padding: 1.5rem 0 2.5rem;
-  color: rgba(244, 250, 247, 0.6);
-  font-size: 0.85rem;
+.new-ui-footer-nav a:hover,
+.new-ui-footer-nav a:focus-visible,
+.new-ui-footer-legal a:hover,
+.new-ui-footer-legal a:focus-visible,
+.new-ui-footer-top-link:hover,
+.new-ui-footer-top-link:focus-visible {
+  color: var(--new-ui-accent);
+  text-shadow:
+    0 0 10px rgba(var(--new-ui-accent-rgb), 0.8),
+    0 0 24px rgba(var(--new-ui-accent-rgb), 0.45);
+}
+
+/* The underline that slides in under nav links (from the shared `nav a`
+   style) glows along with the text. */
+.new-ui-footer-nav a::after {
+  box-shadow: 0 0 8px rgba(var(--new-ui-accent-rgb), 0.8);
+}
+
+/* Big signature at the very bottom, in the same script as the section
+   headings. Never cropped:
+   - its size follows the footer's width (cqw — the footer is the
+     container): "Aaryan Gupta" in Lobster is ~5.55em wide, so 16cqw keeps it
+     at about 89% of the footer on any screen, capped at 9rem on wide ones;
+   - no overflow clipping, a roomy line-height and bottom padding leave space
+     for the tails of the "y" and "p", which dip well below the baseline. */
+.new-ui-footer-watermark {
+  font-family: var(--font-script);
+  font-style: normal;
+  font-weight: 400;
+  font-size: min(9rem, 16cqw);
+  line-height: 1.25;
+  padding: 0.1em 0 0.3em;
+  color: rgba(244, 250, 247, 0.38);
+  text-shadow: 0 0 18px rgba(244, 250, 247, 0.08);
+  text-align: center;
+  white-space: nowrap;
 }
 
 @media (max-width: 700px) {
@@ -4735,7 +5587,7 @@ footer {
 .legal-page {
   min-height: 100svh;
   padding: 2.5rem clamp(1.5rem, 6vw, 5rem) 6rem;
-  background: #06090a;
+  background: var(--dark-surface);
   color: #f4faf7;
 }
 
@@ -4796,18 +5648,98 @@ footer {
   text-decoration: underline;
 }
 
-.not-found-page {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* ---------------------------------------------------------------------------
+   404 page (src/app/not-found.tsx), in the New UI's look. The background
+   lines and buttons reuse the New UI classes; .new-ui-root on the page
+   supplies the palette.
+--------------------------------------------------------------------------- */
+.nf-page {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 100svh;
+  overflow: hidden;
+  padding: 4rem clamp(1.5rem, 6vw, 5rem);
+  color: #f4faf7;
 }
 
-.not-found-content {
+.nf-backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.nf-glow {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: min(95vw, 900px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  /* Kept faint: a soft wash rather than a spotlight. */
+  background: radial-gradient(circle, rgba(var(--new-ui-accent-rgb), 0.07), transparent 60%);
+}
+
+.nf-content {
+  position: relative;
+  z-index: 1;
+  max-width: 640px;
   text-align: center;
 }
 
-.not-found-content p:not(.kicker) {
-  margin-bottom: 2rem;
+.nf-kicker {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--new-ui-accent);
+}
+
+/* The big glowing 404, drifting gently up and down. */
+.nf-code {
+  margin: 0.5rem 0 0.25rem;
+  font-family: var(--font-script);
+  font-size: clamp(7rem, 26vw, 15rem);
+  line-height: 1.1;
+  color: #f4faf7;
+  text-shadow:
+    0 0 24px rgba(var(--new-ui-accent-rgb), 0.28),
+    0 0 70px rgba(var(--new-ui-accent-rgb), 0.12);
+  animation: nf-float 6s ease-in-out infinite;
+}
+
+.nf-title {
+  font-family: var(--font-script);
+  font-weight: 400;
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  line-height: 1.2;
+}
+
+.nf-text {
+  max-width: 38ch;
+  margin: 1rem auto 2.25rem;
+  color: rgba(244, 250, 247, 0.72);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.nf-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+
+@keyframes nf-float {
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nf-code {
+    animation: none;
+  }
 }
 
 .legal-cta {
@@ -4855,9 +5787,49 @@ footer {
 
   display: flow-root;
   min-height: 100svh;
-  background: #06090a;
+  background: var(--dark-surface);
   color: #f4faf7;
   padding-bottom: 4rem;
+  animation: ask-ai-page-enter 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes ask-ai-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ask-ai-page {
+    animation: none;
+  }
+}
+
+.ask-ai-persistent-back {
+  position: fixed;
+  top: 1.25rem;
+  left: 1.25rem;
+  z-index: 45;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(244, 250, 247, 0.2);
+  background: rgba(var(--dark-surface-rgb), 0.6);
+  backdrop-filter: blur(10px);
+  color: #f4faf7;
+  font-size: 0.82rem;
+  font-weight: 700;
+  transition: border-color 220ms ease, background 220ms ease, transform 220ms ease;
+}
+
+.ask-ai-persistent-back:hover {
+  border-color: rgba(125, 211, 252, 0.6);
+  background: rgba(var(--dark-surface-rgb), 0.8);
+  transform: translateY(-1px);
 }
 
 .ask-ai-page .about-assistant {
@@ -4983,7 +5955,7 @@ footer {
   align-items: center;
   gap: 1.25rem;
   padding: 1.25rem clamp(1.5rem, 6vw, 5rem);
-  background: rgba(6, 9, 10, 0.72);
+  background: rgba(var(--dark-surface-rgb), 0.72);
   backdrop-filter: blur(14px) saturate(130%);
   border-top: 1px solid rgba(244, 250, 247, 0.12);
   transform: translateY(100%);
@@ -5013,3 +5985,164 @@ footer {
 .ask-ai-footer-spacer {
   flex: 1;
 }
+
+/* ---------------------------------------------------------------------------
+   Interactive WebGL gallery (/gallery)
+
+   Layout adapted from the 3D Interactive Gallery by Arun Kumar Bind:
+   https://github.com/abx15/3d-interactive-gallery
+
+   The grid's <img> elements are deliberately invisible. They exist to be
+   measured (each plane tracks its image's bounding rect) and to supply the
+   texture source; three.js paints the actual pixels onto the canvas behind.
+--------------------------------------------------------------------------- */
+
+.gallery-page {
+  position: relative;
+  width: 100%;
+  height: 100svh;
+  overflow: hidden;
+  background: var(--dark-surface);
+  color: #f4faf7;
+}
+
+.gallery-stage {
+  position: absolute;
+  inset: 0;
+  cursor: grab;
+}
+
+.gallery-stage.is-dragging {
+  cursor: grabbing;
+}
+
+.gallery-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.gallery-grid {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.gallery-grid-col {
+  position: absolute;
+  top: 0;
+  width: 24rem;
+  max-width: 24rem;
+  height: 100%;
+  overflow: hidden;
+}
+
+.gallery-grid-figure {
+  position: absolute;
+  display: flex;
+  width: 24rem;
+  height: 30rem;
+  overflow: hidden;
+  user-select: none;
+}
+
+.gallery-grid-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+  /* Measured, never painted — three.js draws these. */
+  visibility: hidden;
+  opacity: 0;
+}
+
+.gallery-overlay {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem clamp(1.25rem, 4vw, 2.5rem);
+  pointer-events: none;
+}
+
+.gallery-overlay > * {
+  pointer-events: auto;
+}
+
+.gallery-overlay-top {
+  top: 0;
+  background: linear-gradient(to bottom, rgba(var(--dark-surface-rgb), 0.8), transparent);
+}
+
+.gallery-overlay-bottom {
+  bottom: 0;
+  justify-content: center;
+  background: linear-gradient(to top, rgba(var(--dark-surface-rgb), 0.85), transparent);
+}
+
+.gallery-back {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid rgba(244, 250, 247, 0.35);
+  border-radius: 999px;
+  background: rgba(var(--dark-surface-rgb), 0.55);
+  backdrop-filter: blur(10px);
+  color: #f4faf7;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: border-color 200ms ease, background 200ms ease;
+}
+
+.gallery-back:hover {
+  border-color: rgba(244, 250, 247, 0.7);
+  background: rgba(var(--dark-surface-rgb), 0.8);
+}
+
+.gallery-hint {
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(244, 250, 247, 0.55);
+}
+
+.gallery-credit {
+  font-size: 0.78rem;
+  color: rgba(244, 250, 247, 0.5);
+  text-align: center;
+}
+
+.gallery-credit a {
+  color: rgba(244, 250, 247, 0.8);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.gallery-credit a:hover {
+  color: #f4faf7;
+}
+
+@media (max-width: 860px) {
+  .gallery-grid-col {
+    width: 16rem;
+    max-width: 16rem;
+  }
+
+  .gallery-grid-figure {
+    width: 16rem;
+    height: 20rem;
+  }
+
+  .gallery-hint {
+    display: none;
+  }
+}
+
