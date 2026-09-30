@@ -60,7 +60,7 @@ export function PageLoader() {
       // Awards photos) load when scrolled near and would otherwise hold the
       // loader until MAX_MS on every visit.
       const images = Array.from(document.images).filter(
-        (image) => image.loading !== "lazy"
+        (image) => image.loading !== "lazy",
       );
       const imagesDone = images.filter((image) => image.complete).length;
       const total = 2 + images.length;
@@ -121,7 +121,10 @@ export function PageLoader() {
         <BackgroundLines pulsesPerLine={2} />
       </div>
       <div className="new-ui-loader-content" aria-hidden="true">
-        <span className="new-ui-loader-mark">AG</span>
+        <span className="new-ui-loader-mark">
+          {/* eslint-disable-next-line @next/next/no-img-element -- tiny logo, shown before any JS runs */}
+          <img className="new-ui-logo" src="/logo-emblem.png" alt="" />
+        </span>
         <span className="new-ui-loader-name">Aaryan Gupta</span>
         <span className="new-ui-loader-bar">
           <span ref={barRef} />

@@ -23,6 +23,14 @@ import {
 } from "./_components/social-icons";
 import { PageLoader } from "./_components/page-loader";
 import { HeroVideo } from "./_components/hero-video";
+import {
+  siNextdotjs,
+  siNodedotjs,
+  siPostgresql,
+  siPython,
+  siReact,
+  siTypescript,
+} from "simple-icons";
 import { SmoothScroll } from "./_components/smooth-scroll";
 import { MotionPathReveal } from "./_components/motion-path-reveal";
 import { PathEditor } from "./_components/path-editor";
@@ -33,6 +41,42 @@ import { PathEditor } from "./_components/path-editor";
  * artwork and panel colour (`.new-ui-art-<slug>` in globals.css) and pairs
  * each tile with its panel. Copy comes from the project data on the old page.
  */
+
+// Skills card logos, drawn in the site's accent colour (see
+// .new-ui-skills-grid svg in globals.css). Each tile opens that
+// technology's GeeksforGeeks tutorial in a new tab.
+const techStack = [
+  {
+    name: "TypeScript",
+    icon: siTypescript,
+    docs: "https://www.geeksforgeeks.org/typescript/typescript-tutorial/",
+  },
+  {
+    name: "React",
+    icon: siReact,
+    docs: "https://www.geeksforgeeks.org/reactjs/react/",
+  },
+  {
+    name: "Next.js",
+    icon: siNextdotjs,
+    docs: "https://www.geeksforgeeks.org/nextjs/nextjs-tutorial/",
+  },
+  {
+    name: "Node.js",
+    icon: siNodedotjs,
+    docs: "https://www.geeksforgeeks.org/node-js/nodejs/",
+  },
+  {
+    name: "Python",
+    icon: siPython,
+    docs: "https://www.geeksforgeeks.org/python/python-programming-language-tutorial/",
+  },
+  {
+    name: "PostgreSQL",
+    icon: siPostgresql,
+    docs: "https://www.geeksforgeeks.org/postgresql/postgresql-tutorial/",
+  },
+];
 const featuredProjects = [
   {
     slug: "skillchain",
@@ -270,7 +314,7 @@ function NewUiBody() {
             and companies launch world-class products.
           </p>
           <div className="new-ui-actions">
-            <a className="new-ui-primary" href="mailto:aaryangupta2005@gmail.com">
+            <a className="new-ui-primary" href="#contact">
               Hire Me
             </a>
             <Link className="new-ui-secondary" href="/#work">
@@ -281,7 +325,14 @@ function NewUiBody() {
 
         <div className="new-ui-portrait" aria-hidden="true">
           <span className="new-ui-portrait-glow" />
-          <Image className="new-ui-portrait-photo" src="/profile/aaryan.jpg" alt="Aaryan Gupta" fill sizes="(max-width: 900px) 90vw, 540px" preload />
+          <Image
+            className="new-ui-portrait-photo"
+            src="/profile/aaryan.webp"
+            alt="Aaryan Gupta"
+            fill
+            sizes="(max-width: 900px) 90vw, 540px"
+            preload
+          />
         </div>
       </section>
 
@@ -292,30 +343,46 @@ function NewUiBody() {
           <aside className="new-ui-skills-card">
             <h3>Skills &amp; Tech Stack</h3>
             <div className="new-ui-skills-grid">
-              <span>React</span>
-              <span>Python</span>
-              <span>Node.js</span>
-              <span>TypeScript</span>
+              {techStack.map(({ name, icon, docs }) => (
+                <a
+                  key={name}
+                  href={docs}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`${name} tutorial on GeeksforGeeks (opens in a new tab)`}
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d={icon.path} />
+                  </svg>
+                  {name}
+                </a>
+              ))}
             </div>
           </aside>
 
           <div className="new-ui-about-main">
             <div className="new-ui-about-portrait" aria-hidden="true">
               <span className="new-ui-portrait-glow" />
-              <Image className="new-ui-portrait-photo" src="/profile/aaryan.jpg" alt="Aaryan Gupta" fill sizes="(max-width: 900px) 90vw, 540px" />
+              <Image
+                className="new-ui-portrait-photo"
+                src="/profile/aaryan.webp"
+                alt="Aaryan Gupta"
+                fill
+                sizes="(max-width: 900px) 90vw, 540px"
+              />
             </div>
             <p className="new-ui-about-copy">
-              I build full-stack products end to end — from AI-powered
-              developer tools to real-time, browser-connected experiences.
-              With a strong foundation in data structures and algorithms, I
-              turn ideas into clean, scalable, deployment-ready builds.
+              I build full-stack products end to end — from AI-powered developer
+              tools to real-time, browser-connected experiences. With a strong
+              foundation in data structures and algorithms, I turn ideas into
+              clean, scalable, deployment-ready builds.
             </p>
           </div>
 
           <div className="new-ui-stats">
             <div className="new-ui-stat-card">
               <span>Projects shipped</span>
-              <strong>03</strong>
+              <strong>05</strong>
             </div>
             <div className="new-ui-stat-card">
               <span>B.Tech CSE (AI &amp; ML)</span>
@@ -383,9 +450,15 @@ function NewUiBody() {
           <div className="new-ui-awards-side">
             <div className="new-ui-awards-portrait" aria-hidden="true">
               <span className="new-ui-portrait-glow" />
-              <Image className="new-ui-portrait-photo" src="/profile/aaryan.jpg" alt="Aaryan Gupta" fill sizes="(max-width: 900px) 90vw, 540px" />
+              <Image
+                className="new-ui-portrait-photo"
+                src="/profile/aaryan-awards.webp"
+                alt="Aaryan Gupta"
+                fill
+                sizes="(max-width: 900px) 90vw, 540px"
+              />
             </div>
-            <a className="new-ui-primary" href="mailto:aaryangupta2005@gmail.com">
+            <a className="new-ui-primary" href="#contact">
               Hire Me
             </a>
           </div>
@@ -423,12 +496,32 @@ function NewUiBody() {
               intro: "Embed AI tools and LLMs into real-world apps.",
               stack: "Python · NLP · TensorFlow",
             },
+            {
+              number: "05",
+              title: "Blockchain Development",
+              intro: "Build smart contracts and decentralised apps.",
+              stack: "Solidity · Polygon · Ethers.js",
+            },
+            {
+              number: "06",
+              title: "Deployment & DevOps",
+              intro: "Ship apps to production and keep them running.",
+              stack: "Vercel · Docker · GitHub Actions",
+            },
+            {
+              number: "07",
+              title: "Database Management",
+              intro: "Design, optimise, and maintain reliable databases.",
+              stack: "PostgreSQL · MongoDB · Supabase",
+            },
           ].map((service) => (
             <div className="new-ui-service-item" key={service.number}>
               <p className="new-ui-service-intro">{service.intro}</p>
               <div className="new-ui-service-card">
                 <div className="new-ui-service-top">
-                  <span className="new-ui-service-number">{service.number}</span>
+                  <span className="new-ui-service-number">
+                    {service.number}
+                  </span>
                   <h3>{service.title}</h3>
                 </div>
                 <div className="new-ui-service-stat">
@@ -578,13 +671,14 @@ function NewUiBody() {
                 <span className="new-ui-showcase-index">
                   {String(index + 1).padStart(2, "0")} · {project.tag}
                 </span>
-                <span className="new-ui-showcase-tagline">{project.tagline}</span>
+                <span className="new-ui-showcase-tagline">
+                  {project.tagline}
+                </span>
                 <span className="new-ui-showcase-stack">{project.stack}</span>
               </span>
             </Link>
           ))}
         </div>
-
       </section>
 
       <section className="new-ui-insights" id="insights">
@@ -596,11 +690,13 @@ function NewUiBody() {
           <div className="new-ui-insights-grid">
             {[
               {
-                title: "Building SkillChain: turning GitHub activity into a skill score",
+                title:
+                  "Building SkillChain: turning GitHub activity into a skill score",
                 tag: "AI / NLP",
               },
               {
-                title: "Real-time sync in Soul-Voyage with Firebase and WebSockets",
+                title:
+                  "Real-time sync in Soul-Voyage with Firebase and WebSockets",
                 tag: "Realtime systems",
               },
               {
@@ -608,7 +704,11 @@ function NewUiBody() {
                 tag: "Full-stack",
               },
             ].map((note) => (
-              <div className="new-ui-insight-card" data-view-cursor key={note.title}>
+              <div
+                className="new-ui-insight-card"
+                data-view-cursor
+                key={note.title}
+              >
                 <span className="new-ui-insight-glow" aria-hidden="true" />
                 <span className="new-ui-insight-tag">{note.tag}</span>
                 <p>{note.title}</p>
@@ -625,7 +725,10 @@ function NewUiBody() {
         <IdeaForm />
 
         <div className="new-ui-contact-cards">
-          <a className="new-ui-contact-card" href="mailto:aaryangupta2005@gmail.com">
+          <a
+            className="new-ui-contact-card"
+            href="mailto:aaryangupta2005@gmail.com"
+          >
             <svg aria-hidden="true" viewBox="0 0 24 24">
               <path d="M4 6h16v12H4z" />
               <path d="m4 7 8 6 8-6" />
@@ -656,7 +759,10 @@ function NewUiBody() {
       <footer className="new-ui-footer">
         <div className="new-ui-footer-top">
           <div className="new-ui-footer-brand">
-            <span className="brand-symbol">AG</span>
+            <span className="brand-symbol">
+              {/* eslint-disable-next-line @next/next/no-img-element -- tiny logo, shown before any JS runs */}
+              <img className="new-ui-logo" src="/logo-emblem.png" alt="" />
+            </span>
             <div className="new-ui-footer-social">
               <a
                 href="https://github.com/Aaryan0091"
@@ -689,7 +795,7 @@ function NewUiBody() {
           </div>
 
           <nav className="new-ui-footer-nav" aria-label="Footer navigation">
-            <Link href="/">Home</Link>
+            <a href="#top">Home</a>
             <a href="#about">About</a>
             <a href="#services">Services</a>
             <a href="#featured-work">Case Study</a>
@@ -706,9 +812,10 @@ function NewUiBody() {
           </a>
         </div>
 
-        <div className="new-ui-footer-watermark" aria-hidden="true">Aaryan Gupta</div>
+        <div className="new-ui-footer-watermark" aria-hidden="true">
+          Aaryan Gupta
+        </div>
       </footer>
-
     </main>
   );
 }

@@ -14,6 +14,10 @@ import { ScrollSmoother } from "gsap/ScrollSmoother";
  * becomes the containing block for fixed descendants — so a fixed header
  * placed inside here would scroll away with the content instead of staying put.
  */
+/** False until SmoothScroll first mounts in this document; later mounts are
+ * client-side arrivals from another page. */
+let hasMountedInDocument = false;
+
 export function SmoothScroll({ children }: { children: ReactNode }) {
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
@@ -85,7 +89,17 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
 
         const target = document.querySelector(href);
         if (target) {
-          smoother.scrollTo(target, true, `top ${navHeight + 16}px`);
+          // Targets that fit on screen (like the "Got an Idea?" card) land
+          // centred, with background showing above and below. Taller ones
+          // land just under the header.
+          const fits =
+            target.getBoundingClientRect().height <
+            window.innerHeight;
+          smoother.scrollTo(
+            target,
+            true,
+            fits ? "center center" : `top ${navHeight + 16}px`
+          );
         } else if (href === "#top") {
           smoother.scrollTo(0, true);
         }
@@ -134,6 +148,24 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
       | undefined;
     const isReturnVisit =
       navigation?.type === "reload" || navigation?.type === "back_forward";
+    // Arriving from another page in the app (e.g. the old UI's link here) is
+    // a client-side navigation: the window keeps the previous page's scroll
+    // position, which dropped visitors near the bottom of this page. The
+    // navigation entry above describes the document's first load, not this
+    // arrival, so only trust it when the document was loaded on this page and
+    // this is its first mount here.
+    const loadedHere =
+      !!navigation &&
+      new URL(navigation.name).pathname === window.location.pathname;
+    const isClientArrival = hasMountedInDocument || !loadedHere;
+    hasMountedInDocument = true;
+    const restore = isReturnVisit && !isClientArrival;
+    const startAtTop = !restore && !window.location.hash;
+    const scrollToTop = () => {
+      ScrollSmoother.get()?.scrollTo(0, false);
+      window.scrollTo(0, 0);
+    };
+    if (startAtTop) scrollToTop();
     let savedPosition = 0;
     try {
       savedPosition = Number(sessionStorage.getItem(storageKey)) || 0;
@@ -158,7 +190,10 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     Promise.all([document.fonts?.ready, pageLoaded]).then(() => {
       if (disposed) return;
       ScrollTrigger.refresh();
-      if (isReturnVisit && savedPosition > 0) {
+      if (startAtTop) {
+        scrollToTop();
+        ScrollTrigger.update();
+      } else if (restore && savedPosition > 0) {
         const smoother = ScrollSmoother.get();
         if (smoother) smoother.scrollTo(savedPosition, false);
         else window.scrollTo(0, savedPosition);

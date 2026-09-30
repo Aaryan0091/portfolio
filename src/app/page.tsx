@@ -240,7 +240,10 @@ export default function Home() {
       <header className="site-header">
         <div className="nav-shell">
           <a className="brand" href="#top" aria-label="Aaryan Gupta, home">
-            <span className="brand-symbol">AG</span>
+            <span className="brand-symbol">
+              {/* eslint-disable-next-line @next/next/no-img-element -- tiny logo */}
+              <img className="new-ui-logo" src="/logo-emblem.png" alt="" />
+            </span>
             <span className="brand-name">Aaryan Gupta</span>
           </a>
 
@@ -511,7 +514,10 @@ export default function Home() {
       <footer id="page-end">
         <div className="footer-shell">
           <a className="brand" href="#top" aria-label="Back to top">
-            <span className="brand-symbol">AG</span>
+            <span className="brand-symbol">
+              {/* eslint-disable-next-line @next/next/no-img-element -- tiny logo */}
+              <img className="new-ui-logo" src="/logo-emblem.png" alt="" />
+            </span>
             <span className="brand-name">Full-stack products with intelligence built in.</span>
           </a>
           <div className="footer-links">
