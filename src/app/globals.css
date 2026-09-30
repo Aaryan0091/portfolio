@@ -3758,10 +3758,24 @@ footer {
   overflow: hidden;
 }
 
+/* Photo underneath, video fades in over it once it is actually playing
+   (hero-video.tsx). */
+.new-ui-hero-poster,
 .new-ui-hero-video video {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.new-ui-hero-video video {
+  opacity: 0;
+  transition: opacity 900ms ease;
+}
+
+.new-ui-hero-video video.is-playing {
+  opacity: 1;
 }
 
 .new-ui-hero-video-overlay {
@@ -3885,7 +3899,7 @@ footer {
      italic on top of a script. */
   font-style: normal;
   font-weight: 400;
-  font-size: clamp(3rem, 8vw, 6.5rem);
+  font-size: clamp(3.4rem, 9vw, 7.5rem);
   line-height: 0.98;
   color: #f4faf7;
 }
@@ -6146,3 +6160,118 @@ footer {
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Loading screen (page-loader.tsx)
+--------------------------------------------------------------------------- */
+.new-ui-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  background: var(--dark-surface);
+  color: #f4faf7;
+  transition: opacity 600ms ease, visibility 600ms ease;
+  /* Safety net: if JavaScript never runs, get out of the way anyway. */
+  animation: new-ui-loader-failsafe 0s linear 6s forwards;
+}
+
+.new-ui-loader.is-leaving {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.new-ui-loader-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.new-ui-loader-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.new-ui-loader-mark {
+  display: grid;
+  place-items: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  border: 1px solid rgba(var(--new-ui-accent-rgb), 0.6);
+  border-radius: 50%;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 700;
+  box-shadow: 0 0 30px rgba(var(--new-ui-accent-rgb), 0.35);
+  animation: new-ui-loader-pulse 1.8s ease-in-out infinite;
+}
+
+.new-ui-loader-name {
+  font-family: var(--font-script);
+  font-size: clamp(2.5rem, 9vw, 4.5rem);
+  line-height: 1.2;
+  text-shadow: 0 0 30px rgba(var(--new-ui-accent-rgb), 0.3);
+}
+
+.new-ui-loader-bar {
+  position: relative;
+  width: min(60vw, 240px);
+  height: 2px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(244, 250, 247, 0.12);
+}
+
+.new-ui-loader-bar span {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(var(--new-ui-accent-rgb), 0.3), var(--new-ui-accent), #e6fbff);
+  box-shadow: 0 0 10px rgba(var(--new-ui-accent-rgb), 0.8);
+  transform-origin: left center;
+  /* Driven by page-loader.tsx to match the percentage. */
+  transform: scaleX(0);
+}
+
+.new-ui-loader-percent {
+  margin-top: -0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  color: var(--new-ui-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes new-ui-loader-pulse {
+  50% {
+    box-shadow: 0 0 45px rgba(var(--new-ui-accent-rgb), 0.6);
+  }
+}
+
+@keyframes new-ui-loader-failsafe {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .new-ui-loader-mark {
+    animation: none;
+  }
+}
+
+/* The profile photo in the hero, About and Awards cards. Cropped to keep
+   the face in view: it sits about a third of the way down the tall original. */
+.new-ui-portrait,
+.new-ui-about-portrait,
+.new-ui-awards-portrait {
+  overflow: hidden;
+}
+
+.new-ui-portrait-photo {
+  object-fit: cover;
+  object-position: 50% 30%;
+}

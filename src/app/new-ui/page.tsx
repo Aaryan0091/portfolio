@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 // Script face for the section headings (see --font-script in globals.css).
@@ -20,6 +21,8 @@ import {
   LinkedInIcon,
   MailIcon,
 } from "./_components/social-icons";
+import { PageLoader } from "./_components/page-loader";
+import { HeroVideo } from "./_components/hero-video";
 import { SmoothScroll } from "./_components/smooth-scroll";
 import { MotionPathReveal } from "./_components/motion-path-reveal";
 import { PathEditor } from "./_components/path-editor";
@@ -207,6 +210,7 @@ export default function NewUI() {
       {/* Fixed-position elements live outside #smooth-content — a transformed
           ancestor would otherwise become their containing block and drag them
           up the page along with the content. */}
+      <PageLoader />
       <NewUiHeader />
       <ViewCursor />
       <PortfolioProgress />
@@ -257,19 +261,7 @@ function NewUiBody() {
       </div>
 
       <section className="new-ui-hero">
-        <div className="new-ui-hero-video" aria-hidden="true">
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            poster="/video/hero-bg-poster.jpg"
-          >
-            <source src="/video/hero-bg.mp4" type="video/mp4" />
-          </video>
-          <span className="new-ui-hero-video-overlay" />
-        </div>
+        <HeroVideo />
 
         <div className="new-ui-hero-copy">
           <h1 className="new-ui-name">Aaryan Gupta</h1>
@@ -289,7 +281,7 @@ function NewUiBody() {
 
         <div className="new-ui-portrait" aria-hidden="true">
           <span className="new-ui-portrait-glow" />
-          <span className="new-ui-portrait-mark">AG</span>
+          <Image className="new-ui-portrait-photo" src="/profile/aaryan.jpg" alt="Aaryan Gupta" fill sizes="(max-width: 900px) 90vw, 540px" preload />
         </div>
       </section>
 
@@ -310,7 +302,7 @@ function NewUiBody() {
           <div className="new-ui-about-main">
             <div className="new-ui-about-portrait" aria-hidden="true">
               <span className="new-ui-portrait-glow" />
-              <span className="new-ui-portrait-mark">AG</span>
+              <Image className="new-ui-portrait-photo" src="/profile/aaryan.jpg" alt="Aaryan Gupta" fill sizes="(max-width: 900px) 90vw, 540px" />
             </div>
             <p className="new-ui-about-copy">
               I build full-stack products end to end — from AI-powered
@@ -391,7 +383,7 @@ function NewUiBody() {
           <div className="new-ui-awards-side">
             <div className="new-ui-awards-portrait" aria-hidden="true">
               <span className="new-ui-portrait-glow" />
-              <span className="new-ui-portrait-mark">AG</span>
+              <Image className="new-ui-portrait-photo" src="/profile/aaryan.jpg" alt="Aaryan Gupta" fill sizes="(max-width: 900px) 90vw, 540px" />
             </div>
             <a className="new-ui-primary" href="mailto:aaryangupta2005@gmail.com">
               Hire Me

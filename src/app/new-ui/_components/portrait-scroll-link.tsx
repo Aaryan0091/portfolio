@@ -134,14 +134,11 @@ export function PortraitScrollLink() {
 
     const heroPortrait = document.querySelector<HTMLElement>(".new-ui-portrait");
     const aboutPortrait = document.querySelector<HTMLElement>(".new-ui-about-portrait");
-    const heroMark = heroPortrait?.querySelector<HTMLElement>(
-      ".new-ui-portrait-mark"
-    );
-    const aboutMark = aboutPortrait?.querySelector<HTMLElement>(
-      ".new-ui-portrait-mark"
-    );
-
-    if (!heroPortrait || !aboutPortrait || !heroMark || !aboutMark) return;
+    // The cards hold Aaryan's photo (it used to be an "AG" label that needed
+    // its own counter-scale). The photo simply scales with its card, and both
+    // cards are 16:9, so the travelling photo lines up exactly with the
+    // static one at the hand-over.
+    if (!heroPortrait || !aboutPortrait) return;
 
     const mm = gsap.matchMedia();
 
@@ -156,12 +153,6 @@ export function PortraitScrollLink() {
       const dy =
         endRect.top + endRect.height / 2 - (startRect.top + startRect.height / 2);
       const scale = endRect.width / startRect.width;
-      const startMarkRect = heroMark.getBoundingClientRect();
-      const endMarkRect = aboutMark.getBoundingClientRect();
-
-      // The mark inherits the card's scale. Counter-scale it just enough that
-      // its final apparent size matches the smaller static About mark exactly.
-      const markScale = endMarkRect.width / (startMarkRect.width * scale);
 
       // Derive the scroll range from the measured geometry — see the note at
       // the top of this file for why this cannot be a fixed number.
@@ -211,10 +202,6 @@ export function PortraitScrollLink() {
         zIndex: 30,
         willChange: "transform, opacity",
       });
-      gsap.set(heroMark, {
-        transformOrigin: "center center",
-        willChange: "transform",
-      });
       gsap.set(aboutPortrait, { opacity: 0 });
 
       const tl = gsap.timeline({
@@ -244,21 +231,16 @@ export function PortraitScrollLink() {
         },
         0
       )
-        .to(
-          heroMark,
-          { scale: markScale, duration: flightDuration, ease: "none" },
-          0
-        )
         // The measured boxes now match exactly. Swap layers on this single
-        // frame so the transformed AG label never overlaps the crisp static
-        // label and the animation genuinely ends at the destination card.
+        // frame so the travelling photo hands over to the static one and the
+        // animation genuinely ends at the destination card.
         .set(heroPortrait, { opacity: 0 })
         .set(aboutPortrait, { opacity: 1 }, "<");
 
       return () => {
         tl.scrollTrigger?.kill();
         tl.kill();
-        gsap.set([heroPortrait, aboutPortrait, heroMark], { clearProps: "all" });
+        gsap.set([heroPortrait, aboutPortrait], { clearProps: "all" });
       };
     });
 
