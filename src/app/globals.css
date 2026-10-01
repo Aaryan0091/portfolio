@@ -4548,7 +4548,9 @@ footer {
 .new-ui-work {
   position: relative;
   z-index: 1;
-  padding: var(--new-ui-section-top) clamp(1.5rem, 6vw, 5rem) 8rem;
+  /* Extra breathing room above and below the section; the side padding
+     (which sets the cards' width) is unchanged. */
+  padding: calc(var(--new-ui-section-top) + 3rem) clamp(1.5rem, 6vw, 5rem) 13rem;
 }
 
 .new-ui-work-steps {
@@ -4560,7 +4562,7 @@ footer {
   /* A little extra air under the heading, on top of its own margin. Padding,
      not margin: a margin-top here collapses into the heading's 4rem
      margin-bottom and the larger one wins, so it added nothing. */
-  padding-top: 5rem;
+  padding-top: 9rem;
 }
 
 /* Work Procedure step cards. A defined glass card (border, accent-tinted
@@ -4799,7 +4801,7 @@ footer {
    fits the screen with a little air; the tiles scale down with it. */
 @media (min-width: 901px) {
   .new-ui-featured-grid {
-    max-width: calc((100svh - 7rem) * 100 / var(--grid-h));
+    max-width: calc((100svh - 5rem) * 100 / var(--grid-h));
     margin-inline: auto;
     /* Height from the grid's OWN width: its `cqw` height resolved against
        the parent container, which no longer matches once the width is
@@ -4866,41 +4868,39 @@ footer {
 }
 
 .new-ui-art-blinkflow {
-  /* Calm violet dusk with a soft "eye" of light — a rest-your-eyes app. */
-  --showcase-panel: #2b2457;
+  /* Navy, to match the cover photo (hands at a glowing laptop). */
+  --showcase-panel: #0b2747;
   --featured-art:
-    radial-gradient(ellipse 34% 20% at 50% 46%, rgba(196, 181, 253, 0.85), transparent 70%),
-    radial-gradient(circle at 50% 46%, rgba(125, 211, 252, 0.45), transparent 42%),
-    radial-gradient(circle at 15% 85%, rgba(76, 29, 149, 0.7), transparent 50%),
-    linear-gradient(160deg, #1a1440, #07061a);
+    linear-gradient(to top, rgba(3, 10, 28, 0.75), transparent 55%),
+    url("/projects/blinkflow-cover.webp") center 60% / cover no-repeat,
+    #061428;
 }
 
 .new-ui-art-csm-order-tracker {
-  /* Industrial amber over steel — orders moving across a factory floor. */
-  --showcase-panel: #4a3612;
+  /* Deep indigo, to match the cover (a team climbing glowing steps). */
+  --showcase-panel: #141a52;
   --featured-art:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 48px),
-    radial-gradient(circle at 75% 25%, rgba(251, 191, 36, 0.7), transparent 45%),
-    radial-gradient(circle at 20% 80%, rgba(56, 189, 248, 0.35), transparent 50%),
-    linear-gradient(140deg, #2b2410, #0b0d10);
+    linear-gradient(to top, rgba(3, 10, 28, 0.75), transparent 55%),
+    url("/projects/csm-cover.webp") center 45% / cover no-repeat,
+    #060a24;
 }
 
 .new-ui-art-matchmyresume {
-  /* Emerald "match" glow — a score lighting up. */
-  --showcase-panel: #0f3d33;
+  /* Midnight blue, to match the cover (the glowing piece that fits). */
+  --showcase-panel: #0b2240;
   --featured-art:
-    radial-gradient(circle at 35% 40%, rgba(52, 211, 153, 0.8), transparent 42%),
-    radial-gradient(circle at 80% 75%, rgba(45, 212, 191, 0.55), transparent 48%),
-    linear-gradient(150deg, #052e26, #03110e);
+    linear-gradient(to top, rgba(3, 10, 28, 0.75), transparent 55%),
+    url("/projects/matchmyresume-cover.webp") center 40% / cover no-repeat,
+    #050d1c;
 }
 
 .new-ui-art-focus-tide {
-  /* Night ocean tide — a Pomodoro timer with rain and soft ambience. */
-  --showcase-panel: #0c2f4a;
+  /* Electric blue, to match the cover (a glowing DNA helix). */
+  --showcase-panel: #0a2550;
   --featured-art:
-    radial-gradient(ellipse 120% 40% at 50% 105%, rgba(56, 189, 248, 0.65), transparent 60%),
-    radial-gradient(circle at 80% 20%, rgba(244, 114, 182, 0.35), transparent 40%),
-    linear-gradient(180deg, #071a2c, #031018);
+    linear-gradient(to top, rgba(3, 10, 28, 0.75), transparent 55%),
+    url("/projects/focus-tide-cover.webp") center 45% / cover no-repeat,
+    #040b1c;
 }
 
 /* Small tiles get tighter padding and type. */

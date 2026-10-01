@@ -69,7 +69,9 @@ export function NewUiHeader() {
         <nav aria-label="Primary navigation">
           <a href="#top">Home</a>
           <a href="#services">Services</a>
-          <a href="#contact">Let&apos;s Talk</a>
+          <a href="/Aaryan_Gupta_Resume.pdf" target="_blank" rel="noreferrer">
+            Résumé
+          </a>
           <Link className="ask-ai-nav-link" href="/ask-ai">
             Ask AI
           </Link>
@@ -83,21 +85,10 @@ export function NewUiHeader() {
         </a>
 
         <div className="nav-actions">
-          <a
-            className="nav-cta new-ui-back-cta"
-            href="/Aaryan_Gupta_Resume.pdf"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Résumé
-          </a>
           <Link className="nav-cta new-ui-back-cta" href="/">
             Old UI
           </Link>
-          <a
-            className="nav-cta new-ui-cta"
-            href="mailto:aaryangupta2005@gmail.com"
-          >
+          <a className="nav-cta new-ui-cta" href="#contact">
             Get Started
           </a>
         </div>

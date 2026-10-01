@@ -103,7 +103,7 @@ function answerQuestion(question: string) {
   }
 
   if (/project|built|build|work|portfolio/.test(normalized)) {
-    return "Aaryan has shipped five projects, including SkillChain, Work-Stack, and Soul-Voyage — spanning AI/NLP, blockchain verification, browser tooling, semantic search, and real-time web experiences.";
+    return "Aaryan has shipped seven projects: SkillChain, Work-Stack, Soul-Voyage, BlinkFlow, CSM Order Tracker, MatchMyResume, and Focus Tide — spanning AI/NLP, blockchain verification, browser tooling, desktop apps, real-time systems, and productivity tools. Each has a case study under Featured Work on the portfolio.";
   }
 
   if (/stack|skill|technology|technologies|tool/.test(normalized)) {
@@ -141,20 +141,35 @@ function answerQuestion(question: string) {
   return "I can best answer questions about Aaryan's projects, skills, services, education, LeetCode practice, awards, location, or how to contact him.";
 }
 
-/** Turns the résumé path in an answer into a real link. */
+/**
+ * Turns links in an answer into real links: full URLs, and this site's own
+ * paths (project pages, the résumé, the contact form). Site pages open in
+ * the same tab; everything else in a new one.
+ */
+const LINK_PATTERN =
+  /(https?:\/\/[^\s)]+|\/(?:new-ui[^\s),]*|Aaryan_Gupta_Resume\.pdf))/g;
+
 function renderText(text: string): ReactNode {
-  const resume = "/Aaryan_Gupta_Resume.pdf";
-  if (!text.includes(resume)) return text;
-  const [before, after] = text.split(resume);
-  return (
-    <>
-      {before}
-      <a href={resume} target="_blank" rel="noreferrer">
-        Aaryan_Gupta_Resume.pdf
-      </a>
-      {after}
-    </>
-  );
+  const parts = text.split(LINK_PATTERN);
+  if (parts.length === 1) return text;
+  return parts.map((part, index) => {
+    if (index % 2 === 0) return part;
+    // A sentence's full stop is not part of the link.
+    const href = part.replace(/[.,;:!?]+$/, "");
+    const trailing = part.slice(href.length);
+    const internal = href.startsWith("/new-ui");
+    return (
+      <span key={index}>
+        <a
+          href={href}
+          {...(internal ? {} : { target: "_blank", rel: "noreferrer" })}
+        >
+          {href.replace(/^https?:\/\//, "")}
+        </a>
+        {trailing}
+      </span>
+    );
+  });
 }
 
 function TopicGlyph({ icon }: { icon: TopicIcon }) {
@@ -223,25 +238,56 @@ export function AiChat() {
   useEffect(() => () => window.clearTimeout(replyTimer.current), []);
   const typedPlaceholder = useTypedPlaceholder();
 
-  const ask = (nextQuestion: string) => {
+  /**
+   * Asks the real assistant (/api/ask, Claude) with the conversation so far.
+   * If AI isn't set up (no API key) or the request fails outright, falls
+   * back to the built-in canned answers so the page still works.
+   */
+  const ask = async (nextQuestion: string) => {
     const trimmed = nextQuestion.trim();
     if (!trimmed || typing) return;
 
-    setMessages((current) => [...current, { role: "user", text: trimmed }]);
+    const conversation: Message[] = [...messages, { role: "user", text: trimmed }];
+    setMessages(conversation);
     setQuestion("");
     setTyping(true);
-    replyTimer.current = window.setTimeout(() => {
-      setMessages((current) => [
-        ...current,
-        { role: "assistant", text: answerQuestion(trimmed) },
-      ]);
+
+    const reply = (text: string) => {
+      setMessages((current) => [...current, { role: "assistant", text }]);
       setTyping(false);
-    }, REPLY_DELAY_MS);
+    };
+    const fallback = () => {
+      replyTimer.current = window.setTimeout(
+        () => reply(answerQuestion(trimmed)),
+        REPLY_DELAY_MS
+      );
+    };
+
+    try {
+      const response = await fetch("/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: conversation }),
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        answer?: string;
+        error?: string;
+      };
+      if (response.ok && data.answer) {
+        reply(data.answer);
+      } else if (response.status === 503 || !data.error) {
+        fallback();
+      } else {
+        reply(data.error);
+      }
+    } catch {
+      fallback();
+    }
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    ask(question);
+    void ask(question);
   };
 
   return (
@@ -318,7 +364,7 @@ export function AiChat() {
         {topics.map((topic) => (
           <button
             type="button"
-            onClick={() => ask(topic.question)}
+            onClick={() => void ask(topic.question)}
             disabled={typing}
             key={topic.label}
           >

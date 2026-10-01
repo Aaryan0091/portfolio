@@ -356,7 +356,7 @@ export const projectDetails: ProjectDetail[] = [
     ],
     outcome:
       "A practical tool that shows job seekers exactly where their résumé falls short for a role — and what to do about it.",
-    stack: ["React", "TypeScript", "Tailwind CSS", "FastAPI", "spaCy", "NLTK", "scikit-learn", "Supabase"],
+    stack: ["React", "TypeScript", "Tailwind CSS", "Python", "FastAPI", "spaCy", "NLTK", "scikit-learn", "Supabase"],
     repo: "https://github.com/Aaryan0091/MatchMyResume",
   },
   {

@@ -213,28 +213,30 @@ const sectionReveals = [
 ];
 
 /**
- * Where each Featured Work tile sits, measured off the reference moodboard:
- * left, top and width as % of the tile area's width, plus width/height.
- * Projects fill these in order — three projects take the first row; add
- * more to `featuredProjects` and they land in the next spots automatically.
+ * Where each Featured Work tile sits: left, top and width as % of the tile
+ * area's width, plus width/height. A scattered arrangement with clear space
+ * (at least ~4% of the width) between every pair of tiles. Projects fill
+ * these in order; the eighth spot is spare.
  */
 const featuredSlots = [
-  { x: 0.6, y: 6, w: 29.1, ratio: 1.59 },
-  { x: 47.4, y: 4.3, w: 13, ratio: 1.09, compact: true },
-  { x: 77.6, y: 13.3, w: 21.4, ratio: 1.96 },
-  { x: 35.1, y: 36.4, w: 21.4, ratio: 1.97 },
-  { x: 63.6, y: 30.9, w: 21.6, ratio: 1.26 },
-  { x: 0, y: 55.7, w: 19.4, ratio: 0.75 },
-  { x: 49, y: 62.2, w: 20.5, ratio: 0.9 },
-  { x: 77.4, y: 62.7, w: 21.4, ratio: 1.97 },
+  // Order matches `featuredProjects`.
+  { x: 1, y: 0, w: 37.8, ratio: 1.59 }, // SkillChain — top left
+  { x: 74, y: 31, w: 16.9, ratio: 1.09, compact: true }, // Work-Stack — middle right
+  { x: 38, y: 57, w: 26.65, ratio: 0.9 }, // Soul-Voyage — bottom middle
+  { x: 2, y: 31, w: 27.8, ratio: 1.97 }, // BlinkFlow — middle left
+  { x: 34, y: 29, w: 28.1, ratio: 1.26 }, // CSM Order Tracker — middle
+  { x: 6, y: 54, w: 25.2, ratio: 0.75 }, // MatchMyResume — bottom left
+  { x: 69, y: 5, w: 27.8, ratio: 1.96 }, // Focus Tide — top right
+  { x: 70, y: 56, w: 24, ratio: 1.6 }, // spare — bottom right
 ];
 
 /**
  * How much bigger than the reference the tiles are drawn. Each tile grows
  * around its own centre, so the arrangement keeps its shape, and is then
- * nudged inward if that pushed it past an edge.
+ * nudged inward if that pushed it past an edge. The slots above are already
+ * drawn at full size, so this is 1.
  */
-const TILE_SCALE = 1.2;
+const TILE_SCALE = 1;
 
 // Up to eight projects; a ninth would need another slot above.
 const usedSlots = featuredSlots.slice(0, featuredProjects.length).map((slot) => {
@@ -427,7 +429,7 @@ function NewUiBody() {
           <div className="new-ui-stats">
             <div className="new-ui-stat-card">
               <span>Projects shipped</span>
-              <strong>05</strong>
+              <strong>07</strong>
             </div>
             <div className="new-ui-stat-card">
               <span>B.Tech CSE (AI &amp; ML)</span>
