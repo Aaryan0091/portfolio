@@ -69,7 +69,7 @@ export function NewUiHeader() {
         <nav aria-label="Primary navigation">
           <a href="#top">Home</a>
           <a href="#services">Services</a>
-          <a href="#portfolio">Portfolio</a>
+          <a href="#contact">Let&apos;s Talk</a>
           <Link className="ask-ai-nav-link" href="/ask-ai">
             Ask AI
           </Link>
@@ -78,11 +78,19 @@ export function NewUiHeader() {
         <a className="brand" href="#top" aria-label="Aaryan Gupta, back to top">
           <span className="brand-symbol">
             {/* eslint-disable-next-line @next/next/no-img-element -- tiny logo, shown before any JS runs */}
-            <img className="new-ui-logo" src="/logo-emblem.png" alt="" />
+            <img className="new-ui-logo" src="/logo-a.png" alt="" />
           </span>
         </a>
 
         <div className="nav-actions">
+          <a
+            className="nav-cta new-ui-back-cta"
+            href="/Aaryan_Gupta_Resume.pdf"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Résumé
+          </a>
           <Link className="nav-cta new-ui-back-cta" href="/">
             Old UI
           </Link>

@@ -242,7 +242,7 @@ export default function Home() {
           <a className="brand" href="#top" aria-label="Aaryan Gupta, home">
             <span className="brand-symbol">
               {/* eslint-disable-next-line @next/next/no-img-element -- tiny logo */}
-              <img className="new-ui-logo" src="/logo-emblem.png" alt="" />
+              <img className="new-ui-logo" src="/logo-a.png" alt="" />
             </span>
             <span className="brand-name">Aaryan Gupta</span>
           </a>
@@ -516,7 +516,7 @@ export default function Home() {
           <a className="brand" href="#top" aria-label="Back to top">
             <span className="brand-symbol">
               {/* eslint-disable-next-line @next/next/no-img-element -- tiny logo */}
-              <img className="new-ui-logo" src="/logo-emblem.png" alt="" />
+              <img className="new-ui-logo" src="/logo-a.png" alt="" />
             </span>
             <span className="brand-name">Full-stack products with intelligence built in.</span>
           </a>

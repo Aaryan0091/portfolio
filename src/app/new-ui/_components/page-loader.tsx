@@ -16,14 +16,20 @@ import { BackgroundLines } from "./background-lines";
  *
  * It is part of the server HTML, so it covers the page from the very first
  * paint. Limits, so nobody gets stuck on it:
- *   - shown for at least MIN_MS, so a fast load doesn't just flicker;
+ *   - only when needed: skipped entirely once the portfolio has loaded in
+ *     this tab (its files are cached), and removed at once — no counting,
+ *     no fade — when everything is ready within FAST_MS;
  *   - forced to 100% and dismissed after MAX_MS no matter what;
  *   - and if JavaScript never runs, a CSS animation removes it after 6s.
  *
  * Must render OUTSIDE #smooth-content (position: fixed).
  */
 
-const MIN_MS = 900;
+/** Loads finishing faster than this skip the fade and just vanish — the
+ * screen was barely visible, so a fade would only add a delay. */
+const FAST_MS = 400;
+/** Session flag: set once the portfolio has fully loaded in this tab. */
+const LOADED_KEY = "new-ui-loaded";
 const MAX_MS = 5000;
 /** How often the percentage updates (~30 times a second). */
 const TICK_MS = 33;
@@ -34,7 +40,18 @@ export function PageLoader() {
   const barRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
+    // Already loaded in this tab (flag read before first paint, see
+    // layout.tsx): CSS keeps the loader hidden, so there is nothing to run.
+    if (document.documentElement.classList.contains(LOADED_KEY)) return;
+
     const started = performance.now();
+    const markLoaded = () => {
+      try {
+        sessionStorage.setItem(LOADED_KEY, "1");
+      } catch {
+        // Storage unavailable (private mode, quotas) — just show it again.
+      }
+    };
     let fontsDone = false;
     let pageDone = document.readyState === "complete";
     let forced = false;
@@ -72,6 +89,15 @@ export function PageLoader() {
       // Ease the shown value towards the real one, always moving a little so
       // it never looks frozen, but never past what has actually loaded.
       const goal = target();
+
+      // Everything was ready almost immediately: no need for a loading
+      // screen at all, so remove it without counting up or fading.
+      if (goal >= 1 && performance.now() - started < FAST_MS) {
+        markLoaded();
+        setPhase("gone");
+        return;
+      }
+
       shown = Math.min(goal, shown + Math.max((goal - shown) * 0.12, 0.004));
       const value = Math.round(shown * 100);
       setPercent(value);
@@ -80,13 +106,11 @@ export function PageLoader() {
       const complete = goal >= 1 && value >= 100;
       if (complete && !leaving) {
         leaving = true;
-        const wait = Math.max(0, MIN_MS - (performance.now() - started));
-        window.setTimeout(() => {
-          setPhase("leaving");
-          // Remove it once the 600ms fade is over, even if the browser
-          // skips the transitionend event (e.g. a background tab).
-          window.setTimeout(() => setPhase("gone"), 700);
-        }, wait);
+        markLoaded();
+        setPhase("leaving");
+        // Remove it once the 600ms fade is over, even if the browser
+        // skips the transitionend event (e.g. a background tab).
+        window.setTimeout(() => setPhase("gone"), 700);
         return;
       }
       timer = window.setTimeout(tick, TICK_MS);
@@ -123,7 +147,7 @@ export function PageLoader() {
       <div className="new-ui-loader-content" aria-hidden="true">
         <span className="new-ui-loader-mark">
           {/* eslint-disable-next-line @next/next/no-img-element -- tiny logo, shown before any JS runs */}
-          <img className="new-ui-logo" src="/logo-emblem.png" alt="" />
+          <img className="new-ui-logo" src="/logo-a.png" alt="" />
         </span>
         <span className="new-ui-loader-name">Aaryan Gupta</span>
         <span className="new-ui-loader-bar">

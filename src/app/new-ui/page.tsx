@@ -99,7 +99,43 @@ const featuredProjects = [
     tagline: "Real-time geospatial web experience",
     stack: "React · Firebase · WebSockets · WebGL Earth",
   },
+  {
+    slug: "blinkflow",
+    title: "BlinkFlow",
+    tag: "Desktop app · Electron",
+    tagline: "Privacy-first 20-20-20 eye-care timer",
+    stack: "React · TypeScript · Vite · Electron",
+  },
+  {
+    slug: "csm-order-tracker",
+    title: "CSM Order Tracker",
+    tag: "Full-stack · Realtime",
+    tagline: "Factory order tracking across departments",
+    stack: "React · TypeScript · Firebase · Firestore",
+  },
+  {
+    slug: "matchmyresume",
+    title: "MatchMyResume",
+    tag: "AI / NLP · Full-stack",
+    tagline: "NLP résumé analyser against job descriptions",
+    stack: "React · FastAPI · spaCy · scikit-learn",
+  },
+  {
+    slug: "focus-tide",
+    title: "Focus Tide",
+    tag: "Web app · Productivity",
+    tagline: "Pomodoro timer with ambient soundscapes",
+    stack: "JavaScript · Vite · Web Audio",
+  },
 ];
+
+/**
+ * How many projects (from the top of `featuredProjects`) get the automatic
+ * zoom-in while Featured Work is pinned. The rest still have tiles on the
+ * board and open their page when clicked — they just don't auto-play, which
+ * keeps the pinned stretch short.
+ */
+const SHOWCASE_COUNT = 3;
 
 /**
  * Scroll-triggered entrances, one per section.
@@ -317,9 +353,17 @@ function NewUiBody() {
             <a className="new-ui-primary" href="#contact">
               Hire Me
             </a>
-            <Link className="new-ui-secondary" href="/#work">
+            <a className="new-ui-secondary" href="#featured-work">
               View My Work
-            </Link>
+            </a>
+            <a
+              className="new-ui-secondary new-ui-resume-link"
+              href="/Aaryan_Gupta_Resume.pdf"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Résumé <span aria-hidden="true">↗</span>
+            </a>
           </div>
         </div>
 
@@ -331,7 +375,8 @@ function NewUiBody() {
             alt="Aaryan Gupta"
             fill
             sizes="(max-width: 900px) 90vw, 540px"
-            preload
+            loading="eager"
+            fetchPriority="high"
           />
         </div>
       </section>
@@ -402,7 +447,8 @@ function NewUiBody() {
         <div className="new-ui-awards-layout">
           <p className="new-ui-awards-intro">
             Building end-to-end products through academic work, independent
-            projects, and hackathons.
+            projects, and hackathons — alongside a B.Tech in AI &amp; ML and
+            certifications that keep me shipping real-world software.
           </p>
 
           <div className="new-ui-awards-card">
@@ -492,27 +538,27 @@ function NewUiBody() {
             },
             {
               number: "04",
-              title: "AI Feature Integration",
-              intro: "Embed AI tools and LLMs into real-world apps.",
-              stack: "Python · NLP · TensorFlow",
+              title: "Database Management",
+              intro: "Design, optimise, and maintain reliable databases.",
+              stack: "PostgreSQL · MongoDB · Supabase",
             },
             {
               number: "05",
-              title: "Blockchain Development",
-              intro: "Build smart contracts and decentralised apps.",
-              stack: "Solidity · Polygon · Ethers.js",
-            },
-            {
-              number: "06",
               title: "Deployment & DevOps",
               intro: "Ship apps to production and keep them running.",
               stack: "Vercel · Docker · GitHub Actions",
             },
             {
+              number: "06",
+              title: "AI Feature Integration",
+              intro: "Embed AI tools and LLMs into real-world apps.",
+              stack: "Python · NLP · TensorFlow",
+            },
+            {
               number: "07",
-              title: "Database Management",
-              intro: "Design, optimise, and maintain reliable databases.",
-              stack: "PostgreSQL · MongoDB · Supabase",
+              title: "Blockchain Development",
+              intro: "Build smart contracts and decentralised apps.",
+              stack: "Solidity · Polygon · Ethers.js",
             },
           ].map((service) => (
             <div className="new-ui-service-item" key={service.number}>
@@ -630,7 +676,7 @@ function NewUiBody() {
               >
                 <Link
                   className={`new-ui-featured-card new-ui-art-${project.slug}`}
-                  href="/#work"
+                  href={`/new-ui/projects/${project.slug}`}
                   data-view-cursor
                   data-project={project.slug}
                 >
@@ -649,10 +695,10 @@ function NewUiBody() {
             focusable) except during their turn; desktop only. */}
         <div className="new-ui-showcase-stage">
           <span className="new-ui-showcase-dim" aria-hidden="true" />
-          {featuredProjects.map((project, index) => (
+          {featuredProjects.slice(0, SHOWCASE_COUNT).map((project, index) => (
             <Link
               className={`new-ui-showcase-card new-ui-art-${project.slug}`}
-              href="/#work"
+              href={`/new-ui/projects/${project.slug}`}
               data-view-cursor
               data-project={project.slug}
               key={project.slug}
@@ -761,7 +807,7 @@ function NewUiBody() {
           <div className="new-ui-footer-brand">
             <span className="brand-symbol">
               {/* eslint-disable-next-line @next/next/no-img-element -- tiny logo, shown before any JS runs */}
-              <img className="new-ui-logo" src="/logo-emblem.png" alt="" />
+              <img className="new-ui-logo" src="/logo-a.png" alt="" />
             </span>
             <div className="new-ui-footer-social">
               <a
@@ -799,6 +845,9 @@ function NewUiBody() {
             <a href="#about">About</a>
             <a href="#services">Services</a>
             <a href="#featured-work">Case Study</a>
+            <a href="/Aaryan_Gupta_Resume.pdf" target="_blank" rel="noreferrer">
+              Résumé
+            </a>
           </nav>
 
           <div className="new-ui-footer-legal">

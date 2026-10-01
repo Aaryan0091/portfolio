@@ -45,6 +45,9 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
         // Seconds the content takes to "catch up" to the real scroll position.
         // ~1.2 reads as weighty without feeling laggy or seasick.
         smooth: 1.2,
+        // Scroll sensitivity: each wheel notch or swipe moves the page 2/3 as
+        // far as normal, so getting anywhere takes ~1.5x the scrolling.
+        speed: 1 / 1.5,
         smoothTouch: 0.1,
         // Opts every `data-speed` / `data-lag` attribute on the page into
         // parallax without needing a ScrollTrigger of its own.
@@ -88,21 +91,47 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
         event.preventDefault();
 
         const target = document.querySelector(href);
+        let destination: number;
         if (target) {
           // Targets that fit on screen (like the "Got an Idea?" card) land
           // centred, with background showing above and below. Taller ones
           // land just under the header.
           const fits =
-            target.getBoundingClientRect().height <
-            window.innerHeight;
-          smoother.scrollTo(
+            target.getBoundingClientRect().height < window.innerHeight;
+          destination = smoother.offset(
             target,
-            true,
             fits ? "center center" : `top ${navHeight + 16}px`
           );
         } else if (href === "#top") {
-          smoother.scrollTo(0, true);
+          destination = 0;
+        } else {
+          return;
         }
+
+        // A visible glide rather than a jump: the scroll position is tweened
+        // with an ease-in-out, taking longer for longer trips (0.9–2.2s) so
+        // even a jump across the whole page reads as one fast, smooth sweep.
+        const distance = Math.abs(destination - smoother.scrollTop());
+        const glide = gsap.to(smoother, {
+          scrollTop: destination,
+          duration: gsap.utils.clamp(0.9, 2.2, 0.6 + distance / 4000),
+          ease: "power3.inOut",
+          overwrite: true,
+          onComplete: () => stopOnInput(false),
+        });
+
+        // Scrolling by hand mid-glide hands control straight back.
+        const cancel = () => {
+          glide.kill();
+          stopOnInput(false);
+        };
+        const stopOnInput = (listen: boolean) => {
+          const method = listen ? "addEventListener" : "removeEventListener";
+          window[method]("wheel", cancel);
+          window[method]("touchstart", cancel);
+          window[method]("keydown", cancel);
+        };
+        stopOnInput(true);
       };
 
       const pinWrapper = () => {
@@ -136,7 +165,12 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
 
     const savePosition = () => {
       try {
-        sessionStorage.setItem(storageKey, String(Math.round(window.scrollY)));
+        // In the smoother's own units when it's running: with `speed` below
+        // 1 the window scrolls further than the page moves, and the position
+        // is restored through the smoother below.
+        const position =
+          ScrollSmoother.get()?.scrollTop() ?? window.scrollY;
+        sessionStorage.setItem(storageKey, String(Math.round(position)));
       } catch {
         // Storage can be unavailable (private mode, quotas) — just skip.
       }
@@ -181,6 +215,14 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     // they were on screen. The saved position is restored right after, when
     // the page has its full, final length.
     let disposed = false;
+    /** Header height plus a little air — where a section's top lands. */
+    const navHeightPx = () =>
+      (parseInt(
+        getComputedStyle(document.documentElement)
+          .getPropertyValue("--nav-height")
+          .trim(),
+        10
+      ) || 80) + 16;
     const pageLoaded =
       document.readyState === "complete"
         ? Promise.resolve()
@@ -193,6 +235,16 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
       if (startAtTop) {
         scrollToTop();
         ScrollTrigger.update();
+      } else if (!restore && window.location.hash) {
+        // Arriving with a section in the URL (e.g. "← All projects" from a
+        // project page goes to /new-ui#featured-work): land on that section.
+        // The browser can't do it itself — the smoother owns the scrolling.
+        const smoother = ScrollSmoother.get();
+        const target = document.querySelector(window.location.hash);
+        if (smoother && target) {
+          smoother.scrollTo(target, false, `top ${navHeightPx()}px`);
+          ScrollTrigger.update();
+        }
       } else if (restore && savedPosition > 0) {
         const smoother = ScrollSmoother.get();
         if (smoother) smoother.scrollTo(savedPosition, false);
