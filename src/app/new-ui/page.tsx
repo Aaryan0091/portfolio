@@ -358,14 +358,6 @@ function NewUiBody() {
             <a className="new-ui-secondary" href="#featured-work">
               View My Work
             </a>
-            <a
-              className="new-ui-secondary new-ui-resume-link"
-              href="/Aaryan_Gupta_Resume.pdf"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Résumé <span aria-hidden="true">↗</span>
-            </a>
           </div>
         </div>
 

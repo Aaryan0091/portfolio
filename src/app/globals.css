@@ -6941,8 +6941,10 @@ html.new-ui-loaded .new-ui-loader {
   backdrop-filter: blur(6px);
 }
 
-.case-repo {
-  display: inline-flex;
+.case-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
   margin-top: 1.5rem;
 }
 
@@ -7083,8 +7085,9 @@ html.new-ui-loaded .new-ui-loader {
 }
 
 /* The old site underlines every `nav a` with an ::after line; the
-   "← All projects" pill is a button, not a text link. */
-.case-footer-nav .new-ui-back-cta::after {
+   "← All projects" pill and the "Next project" card aren't text links. */
+.case-footer-nav .new-ui-back-cta::after,
+.case-footer-nav .case-next::after {
   display: none;
 }
 

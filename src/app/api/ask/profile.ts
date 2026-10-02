@@ -15,6 +15,7 @@ const projects = projectDetails
       `- ${project.title} (${project.category}): ${project.tagline}. ` +
       `${project.summary.split(/(?<=\.)\s/)[0]} ` +
       `Stack: ${project.stack.join(", ")}. Page: /new-ui/projects/${project.slug}` +
+      (project.live ? ` Live: ${project.live}` : "") +
       (project.repo ? ` Code: ${project.repo}` : "")
   )
   .join("\n");

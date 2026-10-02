@@ -68,15 +68,29 @@ export default async function ProjectPage({
               <li key={item}>{item}</li>
             ))}
           </ul>
-          {project.repo && (
-            <a
-              className="nav-cta new-ui-cta case-repo"
-              href={project.repo}
-              target="_blank"
-              rel="noreferrer"
-            >
-              View code on GitHub ↗
-            </a>
+          {(project.live || project.repo) && (
+            <div className="case-links">
+              {project.live && (
+                <a
+                  className="nav-cta new-ui-cta"
+                  href={project.live}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Visit live site ↗
+                </a>
+              )}
+              {project.repo && (
+                <a
+                  className={`nav-cta ${project.live ? "new-ui-back-cta" : "new-ui-cta"}`}
+                  href={project.repo}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  View code on GitHub ↗
+                </a>
+              )}
+            </div>
           )}
         </div>
       </section>

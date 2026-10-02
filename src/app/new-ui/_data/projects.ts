@@ -20,6 +20,8 @@ export type ProjectDetail = {
   stack: string[];
   /** Source code on GitHub, when public. */
   repo?: string;
+  /** The live, deployed project, when there is one. */
+  live?: string;
 };
 
 export const projectDetails: ProjectDetail[] = [
@@ -72,6 +74,7 @@ export const projectDetails: ProjectDetail[] = [
     outcome:
       "A working pipeline from GitHub profile to verified, on-chain skill certificate — combining AI analysis with blockchain verification in one product.",
     stack: ["GitHub API", "NLP", "Solidity", "Ethers.js", "Polygon Amoy"],
+    live: "https://skillchain.aaryn.me/",
   },
   {
     slug: "workstack",
@@ -127,6 +130,7 @@ export const projectDetails: ProjectDetail[] = [
     outcome:
       "A single home for scattered knowledge that you can search by meaning, organise automatically, and reach from anywhere in the browser.",
     stack: ["React", "Supabase", "PostgreSQL", "Chrome extension", "NLP"],
+    live: "https://workstack.aaryn.me/",
   },
   {
     slug: "soulvoyage",
