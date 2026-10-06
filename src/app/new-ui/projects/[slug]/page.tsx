@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import "@fontsource/lobster/latin-400.css";
 import { BackgroundLines } from "../../_components/background-lines";
 import { getProjectDetail, projectDetails } from "../../_data/projects";
+import { ReturnLink } from "./return-link";
 
 export function generateStaticParams() {
   return projectDetails.map(({ slug }) => ({ slug }));
@@ -46,12 +47,10 @@ export default async function ProjectPage({
       </div>
 
       <header className="ask-ai-bar case-bar">
+        <ReturnLink className="nav-cta new-ui-back-cta">← All projects</ReturnLink>
         <Link className="ask-ai-brand" href="/new-ui" aria-label="Aaryan Gupta, back to portfolio">
           {/* eslint-disable-next-line @next/next/no-img-element -- tiny logo */}
           <img className="new-ui-logo" src="/logo-a.png" alt="" />
-        </Link>
-        <Link className="nav-cta new-ui-back-cta" href="/new-ui#featured-work">
-          ← All projects
         </Link>
       </header>
 
@@ -157,9 +156,7 @@ export default async function ProjectPage({
         </section>
 
         <nav className="case-footer-nav" aria-label="More projects">
-          <Link className="nav-cta new-ui-back-cta" href="/new-ui#featured-work">
-            ← All projects
-          </Link>
+          <ReturnLink className="nav-cta new-ui-back-cta">← All projects</ReturnLink>
           <Link
             className={`case-next new-ui-art-${next.slug}`}
             href={`/new-ui/projects/${next.slug}`}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, type ReactNode } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ScrollSmoother } from "gsap/ScrollSmoother";
@@ -18,7 +18,43 @@ import { ScrollSmoother } from "gsap/ScrollSmoother";
  * client-side arrivals from another page. */
 let hasMountedInDocument = false;
 
+/**
+ * When the browser's Back/Forward last fired (popstate). Client-side "Back"
+ * from a project page remounts this page without a fresh navigation entry,
+ * so this is how a back-arrival is told apart from a normal link arrival.
+ */
+let lastPopStateAt = -Infinity;
+if (typeof window !== "undefined") {
+  window.addEventListener("popstate", () => {
+    lastPopStateAt = performance.now();
+  });
+}
+const isBackArrival = () => performance.now() - lastPopStateAt < 3000;
+
+/** Set by a project page's "← All projects" link (return-link.tsx): return
+ * the visitor to where they left the portfolio, like Back does. */
+const RETURN_FLAG = "new-ui-return";
+const readReturnFlag = () => {
+  try {
+    return sessionStorage.getItem(RETURN_FLAG) === "1";
+  } catch {
+    return false;
+  }
+};
+
+/** Hides the page while a back-arrival's position is restored, so it
+ * appears already in place instead of showing the top and gliding down. */
+const RESTORING_CLASS = "new-ui-restoring";
+
 export function SmoothScroll({ children }: { children: ReactNode }) {
+  // Before the first paint: coming back via Back, hide the content until it
+  // has been put back where the visitor left it (removed in the effect below).
+  useLayoutEffect(() => {
+    if (hasMountedInDocument && (isBackArrival() || readReturnFlag())) {
+      document.documentElement.classList.add(RESTORING_CLASS);
+    }
+  }, []);
+
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
 
@@ -176,6 +212,17 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
       }
     };
     window.addEventListener("pagehide", savePosition);
+    // Client-side navigation to another page of the site fires no pagehide,
+    // and by the time this component unmounts the scroll has already been
+    // reset. So save whenever scrolling settles, and at the click that
+    // leaves (capture phase, before the router acts).
+    ScrollTrigger.addEventListener("scrollEnd", savePosition);
+    const saveOnLeave = (event: MouseEvent) => {
+      const link = (event.target as HTMLElement | null)?.closest?.("a");
+      const href = link?.getAttribute("href");
+      if (href && !href.startsWith("#")) savePosition();
+    };
+    document.addEventListener("click", saveOnLeave, true);
 
     const navigation = performance.getEntriesByType("navigation")[0] as
       | PerformanceNavigationTiming
@@ -193,7 +240,127 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
       new URL(navigation.name).pathname === window.location.pathname;
     const isClientArrival = hasMountedInDocument || !loadedHere;
     hasMountedInDocument = true;
-    const restore = isReturnVisit && !isClientArrival;
+    // Restore the saved spot on a reload / browser back-forward of this
+    // document, AND when coming back here with Back from another page of
+    // the site (e.g. a project page) — the visitor returns to exactly where
+    // they left, not the top.
+    const returning = isClientArrival && readReturnFlag();
+    // Cleared once the spot has been restored (below), not here: in
+    // development React runs this effect twice, and clearing it on the first
+    // run left the second one thinking this was an ordinary arrival.
+    const clearReturnFlag = () => {
+      try {
+        sessionStorage.removeItem(RETURN_FLAG);
+      } catch {
+        // ignore
+      }
+    };
+    const restore =
+      (isReturnVisit && !isClientArrival) ||
+      (isClientArrival && (isBackArrival() || returning));
+    const reveal = () =>
+      document.documentElement.classList.remove(RESTORING_CLASS);
+    // Never leave the page hidden, whatever happens below.
+    const revealTimer = window.setTimeout(reveal, 2500);
+
+    /**
+     * Puts the page at `position` and keeps it there, still hidden, until it
+     * has stayed put for a few frames — then shows it. Right after arriving,
+     * late layout re-measures (pins, images, fonts) can reset the scroll to
+     * near the top, after which the smoother glided back down in plain view:
+     * the "scrolling down to where I was" effect. Re-applying the position
+     * and only revealing once the content is steady means the page appears
+     * already in place.
+     */
+    const jumpTo = (position: number) => {
+      const smoother = ScrollSmoother.get();
+      if (smoother) {
+        smoother.scrollTo(position, false);
+        // Jumping moves the content but not the smoother's own scroll
+        // animation, which still sits near the top after the arrival's
+        // layout re-measures. On its next update it replayed from there and
+        // glided down in plain view. Syncing it to the new spot (and
+        // cancelling any catch-up in flight) keeps the content right here.
+        const main = smoother.scrollTrigger;
+        smoother.paused(true);
+        smoother.paused(false);
+        main?.animation?.progress(main.progress);
+      } else {
+        window.scrollTo(0, position);
+      }
+      ScrollTrigger.update();
+    };
+    /**
+     * For a moment after the restored page appears, ScrollSmoother can still
+     * relaunch its catch-up animation from a stale spot near the top (left
+     * over from the arrival's layout re-measures) and glide down. While the
+     * visitor hasn't scrolled themselves, any such catch-up is finished
+     * instantly — the content never leaves the spot on screen.
+     */
+    const guardAfterReveal = (position: number) => {
+      const smoother = ScrollSmoother.get();
+      if (!smoother) return;
+      const nativeY = window.scrollY;
+      const until = performance.now() + 1200;
+      // Runs inside GSAP's own tick, right after it renders and before the
+      // browser paints — so a stray catch-up is undone in the same frame
+      // and never reaches the screen.
+      const guard = () => {
+        // Stop after a moment, or as soon as the visitor scrolls (their own
+        // smoothing is theirs to keep).
+        if (
+          disposed ||
+          performance.now() > until ||
+          Math.abs(window.scrollY - nativeY) > 2
+        ) {
+          gsap.ticker.remove(guard);
+          return;
+        }
+        const tween = smoother.scrollTrigger?.getTween?.();
+        if (tween?.isActive() && Math.abs(smoother.scrollTop() - position) > 2) {
+          tween.progress(1);
+          smoother.scrollTo(position, false);
+        }
+      };
+      gsap.ticker.add(guard);
+      removeGuard = () => gsap.ticker.remove(guard);
+    };
+    let removeGuard = () => {};
+
+    let holdFrame = 0;
+    const holdAt = (position: number) => {
+      const started = performance.now();
+      let steadyFrames = 0;
+      const tick = () => {
+        if (disposed) return;
+        const smoother = ScrollSmoother.get();
+        if (!smoother) {
+          window.scrollTo(0, position);
+          reveal();
+          return;
+        }
+        if (Math.abs(smoother.scrollTop() - position) > 2) {
+          jumpTo(position);
+          steadyFrames = 0;
+        }
+        // The content's actual on-screen offset, which lags the scroll
+        // position while the smoother eases.
+        const content = document.getElementById("smooth-content");
+        const transform = content ? getComputedStyle(content).transform : "none";
+        const offset =
+          transform && transform !== "none" ? -new DOMMatrix(transform).m42 : 0;
+        steadyFrames =
+          Math.abs(offset - smoother.scrollTop()) < 3 ? steadyFrames + 1 : 0;
+        if (steadyFrames >= 6 || performance.now() - started > 2000) {
+          reveal();
+          guardAfterReveal(position);
+          return;
+        }
+        holdFrame = requestAnimationFrame(tick);
+      };
+      jumpTo(position);
+      holdFrame = requestAnimationFrame(tick);
+    };
     const startAtTop = !restore && !window.location.hash;
     const scrollToTop = () => {
       ScrollSmoother.get()?.scrollTo(0, false);
@@ -235,26 +402,38 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
       if (startAtTop) {
         scrollToTop();
         ScrollTrigger.update();
-      } else if (!restore && window.location.hash) {
-        // Arriving with a section in the URL (e.g. "← All projects" from a
-        // project page goes to /new-ui#featured-work): land on that section.
-        // The browser can't do it itself — the smoother owns the scrolling.
+      } else if (restore && savedPosition > 0) {
+        holdAt(savedPosition);
+        clearReturnFlag();
+        return; // holdAt reveals the page itself, once it's settled.
+      } else if (window.location.hash || returning) {
+        // Arriving with a section in the URL — or via "← All projects" from
+        // a project page opened directly, so there's no saved spot (that
+        // lands on Featured Work): go to that section. The browser can't do
+        // it itself — the smoother owns the scrolling.
         const smoother = ScrollSmoother.get();
-        const target = document.querySelector(window.location.hash);
+        const target = document.querySelector(
+          window.location.hash || "#featured-work"
+        );
         if (smoother && target) {
           smoother.scrollTo(target, false, `top ${navHeightPx()}px`);
           ScrollTrigger.update();
         }
-      } else if (restore && savedPosition > 0) {
-        const smoother = ScrollSmoother.get();
-        if (smoother) smoother.scrollTo(savedPosition, false);
-        else window.scrollTo(0, savedPosition);
-        ScrollTrigger.update();
       }
+      clearReturnFlag();
+      // Show the page once it's in place (next frame, so the jump has been
+      // rendered and nothing glides into view).
+      requestAnimationFrame(reveal);
     });
 
     return () => {
       disposed = true;
+      cancelAnimationFrame(holdFrame);
+      removeGuard();
+      ScrollTrigger.removeEventListener("scrollEnd", savePosition);
+      document.removeEventListener("click", saveOnLeave, true);
+      window.clearTimeout(revealTimer);
+      reveal();
       window.removeEventListener("pagehide", savePosition);
       window.history.scrollRestoration = previousRestoration;
       mm.revert();

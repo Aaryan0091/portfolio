@@ -7157,3 +7157,10 @@ html.new-ui-loaded .new-ui-loader {
     animation: none;
   }
 }
+
+/* Coming back to the portfolio with Back: hidden for an instant while the
+   scroll position is restored (smooth-scroll.tsx), so it reappears exactly
+   where the visitor left it instead of showing the top and gliding down. */
+html.new-ui-restoring #smooth-content {
+  visibility: hidden;
+}
