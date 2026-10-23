@@ -4007,9 +4007,9 @@ footer {
      instead of being cut off at this section's top edge. */
   background: linear-gradient(
     to bottom,
-    transparent,
-    rgba(var(--dark-surface-rgb), 0.55) clamp(4rem, 12svh, 7rem),
-    var(--dark-surface) clamp(8rem, 20svh, 12rem)
+    rgba(var(--dark-surface-rgb), 0.7),
+    rgba(var(--dark-surface-rgb), 0.96) clamp(3rem, 9svh, 5.25rem),
+    var(--dark-surface) clamp(6rem, 15svh, 9rem)
   );
   padding: var(--new-ui-section-top) clamp(1.5rem, 6vw, 5rem) 6rem;
 }
@@ -4297,9 +4297,9 @@ footer {
   z-index: 1;
   background: linear-gradient(
     to bottom,
-    transparent,
-    rgba(var(--dark-surface-rgb), 0.55) clamp(4rem, 12svh, 7rem),
-    var(--dark-surface) clamp(8rem, 20svh, 12rem)
+    rgba(var(--dark-surface-rgb), 0.7),
+    rgba(var(--dark-surface-rgb), 0.96) clamp(3rem, 9svh, 5.25rem),
+    var(--dark-surface) clamp(6rem, 15svh, 9rem)
   );
   padding: var(--new-ui-section-top) clamp(1.5rem, 6vw, 5rem) 8rem;
 }
@@ -4324,6 +4324,40 @@ footer {
    track in the band BELOW the heading and are slid across from the right
    while the stage is pinned, so they never rise into the heading.
 --------------------------------------------------------------------------- */
+/* Start dimming the long light streaks before the section boundary. This
+   joins the section's 70% cover seamlessly, including while it is pinned. */
+.new-ui-awards::before,
+.new-ui-services::before,
+.pin-spacer:has(> .new-ui-services.is-showcase)::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 100%;
+  height: clamp(5rem, 12svh, 8rem);
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, rgba(var(--dark-surface-rgb), 0.7));
+}
+
+/* Feather the lower edge of Services into the exposed guide lines. Use the
+   pin spacer on desktop because the moving cards need the stage clipped. */
+.new-ui-services:not(.is-showcase)::after,
+.pin-spacer:has(> .new-ui-services.is-showcase)::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  height: clamp(6rem, 16svh, 10rem);
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    var(--dark-surface),
+    rgba(var(--dark-surface-rgb), 0.8) 25%,
+    rgba(var(--dark-surface-rgb), 0.3) 65%,
+    transparent
+  );
+}
+
 .new-ui-services.is-showcase {
   /* Heading line-height is 1.5, so half its box is 0.75 × its font size. */
   --svc-heading-half: calc(0.75 * var(--new-ui-heading-size));
