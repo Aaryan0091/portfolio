@@ -3989,7 +3989,14 @@ footer {
      section's higher z-index and opaque background, it painted straight over
      the "Services I Offer" heading. */
   display: flow-root;
-  background: var(--dark-surface);
+  /* Let the page-wide guide lines disappear over the heading's entrance
+     instead of being cut off at this section's top edge. */
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(var(--dark-surface-rgb), 0.55) clamp(4rem, 12svh, 7rem),
+    var(--dark-surface) clamp(8rem, 20svh, 12rem)
+  );
   padding: var(--new-ui-section-top) clamp(1.5rem, 6vw, 5rem) 6rem;
 }
 
@@ -4244,7 +4251,12 @@ footer {
 .new-ui-services {
   position: relative;
   z-index: 1;
-  background: var(--dark-surface);
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(var(--dark-surface-rgb), 0.55) clamp(4rem, 12svh, 7rem),
+    var(--dark-surface) clamp(8rem, 20svh, 12rem)
+  );
   padding: var(--new-ui-section-top) clamp(1.5rem, 6vw, 5rem) 8rem;
 }
 
