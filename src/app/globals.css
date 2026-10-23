@@ -5178,7 +5178,7 @@ html:has(.new-ui-root)::-webkit-scrollbar {
 }
 
 .new-ui-progress-bar::before {
-  /* Faint track, shown on hover so the full length reads as draggable. */
+  /* Only reveal the full track during interaction. */
   content: "";
   position: absolute;
   top: 0;
@@ -5193,11 +5193,10 @@ html:has(.new-ui-root)::-webkit-scrollbar {
 .new-ui-progress-bar span {
   position: relative;
   display: block;
+  width: 0;
   height: 2px;
-  background: linear-gradient(90deg, rgba(var(--new-ui-accent-rgb), 0.35), var(--new-ui-accent), #e6fbff);
+  background: linear-gradient(90deg, var(--new-ui-accent), #e6fbff);
   box-shadow: 0 0 10px rgba(var(--new-ui-accent-rgb), 0.8);
-  transform: scaleX(0);
-  transform-origin: left center;
   transition: height 200ms ease;
 }
 
@@ -6118,6 +6117,15 @@ html:has(.new-ui-root)::-webkit-scrollbar {
   z-index: 1;
 }
 
+.ask-ai-v2 > .new-ui-backdrop {
+  transition: opacity 600ms ease;
+}
+
+/* Keep a faint trace of the ambient lights once the conversation begins. */
+.ask-ai-v2:has(.ask-ai-stage.is-chatting) > .new-ui-backdrop {
+  opacity: 0.12;
+}
+
 .ask-ai-bar {
   display: flex;
   flex: none;
@@ -6248,6 +6256,8 @@ html:has(.new-ui-root)::-webkit-scrollbar {
 
 .ask-ai-stage.is-chatting .ask-ai-photo-glow {
   width: 110px;
+  animation: none;
+  opacity: 0.15;
 }
 
 .ask-ai-stage.is-chatting .ask-ai-greeting {
@@ -6269,9 +6279,11 @@ html:has(.new-ui-root)::-webkit-scrollbar {
   margin-bottom: 1rem;
   padding: 0.25rem 0.25rem 0.5rem;
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(var(--new-ui-accent-rgb), 0.3) transparent;
-  mask-image: linear-gradient(to bottom, transparent, #000 1.25rem);
+  scrollbar-width: none;
+}
+
+.ask-ai-log::-webkit-scrollbar {
+  display: none;
 }
 
 .ask-ai-row {
@@ -6299,6 +6311,51 @@ html:has(.new-ui-root)::-webkit-scrollbar {
   color: var(--new-ui-accent);
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+.ask-ai-bubble {
+  overflow-wrap: anywhere;
+}
+
+.ask-ai-bubble-user {
+  white-space: pre-wrap;
+}
+
+.ask-ai-bubble-assistant > * + * {
+  margin-top: 0.85rem;
+}
+
+.ask-ai-bubble-assistant ul,
+.ask-ai-bubble-assistant ol {
+  padding-left: 1.3rem;
+}
+
+.ask-ai-bubble-assistant ul {
+  list-style: disc;
+}
+
+.ask-ai-bubble-assistant ol {
+  list-style: decimal;
+}
+
+.ask-ai-bubble-assistant li + li {
+  margin-top: 0.8rem;
+}
+
+.ask-ai-bubble-assistant li > p + p {
+  margin-top: 0.4rem;
+}
+
+.ask-ai-bubble-assistant strong {
+  color: #f4faf7;
+  font-weight: 650;
+}
+
+.ask-ai-bubble-assistant pre {
+  overflow-x: auto;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .ask-ai-bubble-assistant {
@@ -6550,6 +6607,10 @@ html:has(.new-ui-root)::-webkit-scrollbar {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .ask-ai-v2 > .new-ui-backdrop {
+    transition: none;
+  }
+
   .ask-ai-hero,
   .ask-ai-photo,
   .ask-ai-photo-glow,

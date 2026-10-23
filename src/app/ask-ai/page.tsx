@@ -22,10 +22,10 @@ export default function AskAiPage() {
       </div>
 
       <header className="ask-ai-bar">
-        <Link className="nav-cta new-ui-back-cta" href="/new-ui">
+        <Link className="nav-cta new-ui-back-cta" href="/">
           ← Back to portfolio
         </Link>
-        <Link className="ask-ai-brand" href="/new-ui" aria-label="Aaryan Gupta, back to portfolio">
+        <Link className="ask-ai-brand" href="/" aria-label="Aaryan Gupta, back to portfolio">
           {/* eslint-disable-next-line @next/next/no-img-element -- tiny logo */}
           <img className="new-ui-logo" src="/logo-a.png" alt="" />
         </Link>

@@ -18,7 +18,7 @@ export default function GalleryPage() {
       <InteractiveGallery images={galleryImages} />
 
       <header className="gallery-overlay gallery-overlay-top">
-        <Link className="gallery-back" href="/new-ui">
+        <Link className="gallery-back" href="/">
           ← Back to portfolio
         </Link>
         <p className="gallery-hint">Drag or scroll in any direction</p>

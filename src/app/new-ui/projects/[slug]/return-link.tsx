@@ -26,7 +26,7 @@ export function ReturnLink({
       // No #hash: Next.js would scroll to it after arriving and override
       // the restored spot. The no-saved-spot fallback to Featured Work is
       // handled in smooth-scroll.tsx instead.
-      href="/new-ui"
+      href="/"
       // Next.js otherwise scrolls to the top after arriving, undoing the
       // restored spot.
       scroll={false}

@@ -48,7 +48,7 @@ export default async function ProjectPage({
 
       <header className="ask-ai-bar case-bar">
         <ReturnLink className="nav-cta new-ui-back-cta">← All projects</ReturnLink>
-        <Link className="ask-ai-brand" href="/new-ui" aria-label="Aaryan Gupta, back to portfolio">
+        <Link className="ask-ai-brand" href="/" aria-label="Aaryan Gupta, back to portfolio">
           {/* eslint-disable-next-line @next/next/no-img-element -- tiny logo */}
           <img className="new-ui-logo" src="/logo-a.png" alt="" />
         </Link>

@@ -7,7 +7,7 @@ export const metadata = {
 export default function PrivacyPage() {
   return (
     <main className="legal-page">
-      <Link className="legal-back" href="/new-ui">
+      <Link className="legal-back" href="/">
         ← Back
       </Link>
 

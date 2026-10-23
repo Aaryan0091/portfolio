@@ -28,7 +28,7 @@ export default function NotFound() {
           the good stuff.
         </p>
         <div className="nf-actions">
-          <Link className="new-ui-primary" href="/new-ui">
+          <Link className="new-ui-primary" href="/">
             Back to the portfolio
           </Link>
           <Link className="new-ui-secondary" href="/gallery">

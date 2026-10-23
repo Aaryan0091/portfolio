@@ -12,8 +12,7 @@ import { systemPrompt } from "./profile";
  * GROQ_API_KEY to its key, AI_BASE_URL to its API base URL and GROQ_MODEL
  * to one of its model names.
  *
- * With no key this returns 503 and the page falls back to its built-in
- * canned answers.
+ * With no key this returns 503 and the page displays an unavailable notice.
  *
  * Guards against abuse running up the bill: a per-visitor rate limit, a cap
  * on how much conversation is sent, and a short max answer length.
@@ -24,7 +23,7 @@ const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
 // Llama 3.3 has been retired on Groq; GPT-OSS 120B is the strongest
 // general model offered there now.
 const GROQ_DEFAULT_MODEL = "openai/gpt-oss-120b";
-const MAX_ANSWER_TOKENS = 400;
+const MAX_ANSWER_TOKENS = 900;
 
 /** Conversation sent per request: the latest turns only, each trimmed. */
 const MAX_TURNS = 10;
@@ -174,9 +173,7 @@ export async function POST(request: Request) {
     ? await askOpenAiCompatible(groqKey, turns)
     : await askClaude(claudeKey!, turns);
 
-  // Provider busy (e.g. Groq's free-tier per-minute limit) or down: report
-  // "unavailable" so the page answers from its built-in canned replies
-  // instead of showing an error.
+  // Report provider failures explicitly; the UI must not invent a reply.
   if (answer === null) {
     return Response.json({ error: "unavailable" }, { status: 503 });
   }
