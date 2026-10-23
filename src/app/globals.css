@@ -3758,10 +3758,24 @@ footer {
   overflow: hidden;
 }
 
+/* Photo underneath, video fades in over it once it is actually playing
+   (hero-video.tsx). */
+.new-ui-hero-poster,
 .new-ui-hero-video video {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.new-ui-hero-video video {
+  opacity: 0;
+  transition: opacity 900ms ease;
+}
+
+.new-ui-hero-video video.is-playing {
+  opacity: 1;
 }
 
 .new-ui-hero-video-overlay {
@@ -3885,7 +3899,7 @@ footer {
      italic on top of a script. */
   font-style: normal;
   font-weight: 400;
-  font-size: clamp(3rem, 8vw, 6.5rem);
+  font-size: clamp(3.4rem, 9vw, 7.5rem);
   line-height: 0.98;
   color: #f4faf7;
 }
@@ -4066,10 +4080,12 @@ footer {
   gap: 0.75rem;
 }
 
-.new-ui-skills-grid span {
+.new-ui-skills-grid a {
   display: grid;
   place-items: center;
-  height: 64px;
+  align-content: center;
+  gap: 0.4rem;
+  height: 78px;
   border: 1px solid rgba(244, 250, 247, 0.14);
   border-radius: 0.75rem;
   background: rgba(var(--dark-surface-rgb), 0.5);
@@ -4078,6 +4094,34 @@ footer {
   font-weight: 700;
   color: rgba(244, 250, 247, 0.85);
   text-align: center;
+}
+
+.new-ui-skills-grid a {
+  text-decoration: none;
+  transition: border-color 250ms ease, background-color 250ms ease;
+}
+
+/* Logos in the site's sky-blue accent with a soft glow, rather than each
+   brand's own colour, so the card reads as one piece. */
+.new-ui-skills-grid svg {
+  width: 24px;
+  height: 24px;
+  fill: var(--new-ui-accent);
+  stroke: none;
+  opacity: 0.85;
+  filter: drop-shadow(0 0 6px rgba(var(--new-ui-accent-rgb), 0.45));
+  transition: opacity 250ms ease, filter 250ms ease, transform 250ms ease;
+}
+
+.new-ui-skills-grid a:hover {
+  border-color: rgba(var(--new-ui-accent-rgb), 0.45);
+  background-color: rgba(var(--new-ui-accent-rgb), 0.06);
+}
+
+.new-ui-skills-grid a:hover svg {
+  opacity: 1;
+  transform: translateY(-2px);
+  filter: drop-shadow(0 0 10px rgba(var(--new-ui-accent-rgb), 0.75));
 }
 
 .new-ui-about-main {
@@ -4170,8 +4214,8 @@ footer {
 .new-ui-awards-intro {
   padding-top: 0.5rem;
   color: rgba(244, 250, 247, 0.72);
-  font-size: 1.05rem;
-  line-height: 1.6;
+  font-size: clamp(1.15rem, 1.6vw, 1.4rem);
+  line-height: 1.65;
 }
 
 .new-ui-awards-card {
@@ -4492,10 +4536,33 @@ footer {
   margin-top: -1rem;
 }
 
+.new-ui-service-item:nth-child(5) {
+  margin-left: 10%;
+  margin-top: -1rem;
+}
+
+.new-ui-service-item:nth-child(6) {
+  margin-left: 50%;
+  margin-top: -1rem;
+}
+
+.new-ui-service-item:nth-child(7) {
+  margin-left: 20%;
+  margin-top: -1rem;
+}
+
+/* Work Procedure's heading, a size up from the shared section heading
+   (clamp(3.25rem, 8vw, 6.5rem)). */
+.new-ui-work .new-ui-services-heading {
+  font-size: clamp(3.75rem, 9.5vw, 8rem);
+}
+
 .new-ui-work {
   position: relative;
   z-index: 1;
-  padding: var(--new-ui-section-top) clamp(1.5rem, 6vw, 5rem) 8rem;
+  /* Extra breathing room above and below the section; the side padding
+     (which sets the cards' width) is unchanged. */
+  padding: calc(var(--new-ui-section-top) + 3rem) clamp(1.5rem, 6vw, 5rem) 13rem;
 }
 
 .new-ui-work-steps {
@@ -4507,7 +4574,7 @@ footer {
   /* A little extra air under the heading, on top of its own margin. Padding,
      not margin: a margin-top here collapses into the heading's 4rem
      margin-bottom and the larger one wins, so it added nothing. */
-  padding-top: 5rem;
+  padding-top: 9rem;
 }
 
 /* Work Procedure step cards. A defined glass card (border, accent-tinted
@@ -4740,6 +4807,22 @@ footer {
   height: calc(var(--grid-h) * 1cqw);
 }
 
+/* With seven projects the moodboard is taller than it is wide-screen-
+   friendly: at full width its last row ran below the screen while the
+   section is pinned (centred on screen). Cap its width so its height always
+   fits the screen with a little air; the tiles scale down with it. */
+@media (min-width: 901px) {
+  .new-ui-featured-grid {
+    max-width: calc((100svh - 5rem) * 100 / var(--grid-h));
+    margin-inline: auto;
+    /* Height from the grid's OWN width: its `cqw` height resolved against
+       the parent container, which no longer matches once the width is
+       capped. */
+    height: auto;
+    aspect-ratio: 100 / var(--grid-h);
+  }
+}
+
 .new-ui-featured-item {
   position: absolute;
   left: calc(var(--slot-x) * 1cqw);
@@ -4767,30 +4850,69 @@ footer {
    panels below them. Swap --featured-art for url(...) once there are real
    project screenshots. */
 .new-ui-art-skillchain {
-  /* Gold, warm. */
-  --showcase-panel: #5c430f;
+  /* Deep teal-blue, to match the cover photo; framed on the eye, with the
+     same bottom fade as the other covers for the title. */
+  --showcase-panel: #0a2f45;
   --featured-art:
-    radial-gradient(circle at 62% 38%, rgba(255, 196, 84, 0.85), transparent 42%),
-    radial-gradient(circle at 20% 80%, rgba(196, 120, 24, 0.7), transparent 55%),
-    linear-gradient(135deg, #3a2406, #140b02);
+    linear-gradient(to top, rgba(3, 10, 28, 0.75), transparent 55%),
+    url("/projects/skillchain-cover.webp") 45% 45% / cover no-repeat,
+    #051a28;
 }
 
 .new-ui-art-workstack {
-  /* Neon pink/blue. */
-  --showcase-panel: #34205a;
+  /* Navy, to match the cover photo; the bottom fade keeps the title
+     readable. Framed on the globe, above the photo's corner watermark. */
+  --showcase-panel: #0d2447;
   --featured-art:
-    radial-gradient(circle at 30% 25%, rgba(255, 56, 160, 0.8), transparent 45%),
-    radial-gradient(circle at 70% 75%, rgba(60, 150, 255, 0.85), transparent 50%),
-    linear-gradient(160deg, #1b0b2a, #06121f);
+    linear-gradient(to top, rgba(3, 10, 28, 0.75), transparent 55%),
+    url("/projects/workstack-cover.webp") center 35% / cover no-repeat,
+    #061226;
 }
 
 .new-ui-art-soulvoyage {
-  /* Deep red. */
-  --showcase-panel: #5e1320;
+  /* Deep blue, to match the cover photo. The dark fade at the bottom keeps
+     the title readable over it. */
+  --showcase-panel: #0b2a5e;
   --featured-art:
-    radial-gradient(circle at 50% 45%, rgba(255, 54, 54, 0.75), transparent 40%),
-    radial-gradient(circle at 85% 20%, rgba(150, 20, 60, 0.7), transparent 45%),
-    linear-gradient(135deg, #2a0508, #0c0203);
+    linear-gradient(to top, rgba(3, 10, 28, 0.75), transparent 55%),
+    url("/projects/soulvoyage-cover.webp") center 40% / cover no-repeat,
+    #06142e;
+}
+
+.new-ui-art-blinkflow {
+  /* Navy, to match the cover photo (hands at a glowing laptop). */
+  --showcase-panel: #0b2747;
+  --featured-art:
+    linear-gradient(to top, rgba(3, 10, 28, 0.75), transparent 55%),
+    url("/projects/blinkflow-cover.webp") center 60% / cover no-repeat,
+    #061428;
+}
+
+.new-ui-art-csm-order-tracker {
+  /* Deep indigo, to match the cover (a team climbing glowing steps). */
+  --showcase-panel: #141a52;
+  --featured-art:
+    linear-gradient(to top, rgba(3, 10, 28, 0.75), transparent 55%),
+    url("/projects/csm-cover.webp") center 45% / cover no-repeat,
+    #060a24;
+}
+
+.new-ui-art-matchmyresume {
+  /* Midnight blue, to match the cover (the glowing piece that fits). */
+  --showcase-panel: #0b2240;
+  --featured-art:
+    linear-gradient(to top, rgba(3, 10, 28, 0.75), transparent 55%),
+    url("/projects/matchmyresume-cover.webp") center 40% / cover no-repeat,
+    #050d1c;
+}
+
+.new-ui-art-focus-tide {
+  /* Electric blue, to match the cover (a glowing DNA helix). */
+  --showcase-panel: #0a2550;
+  --featured-art:
+    linear-gradient(to top, rgba(3, 10, 28, 0.75), transparent 55%),
+    url("/projects/focus-tide-cover.webp") center 45% / cover no-repeat,
+    #040b1c;
 }
 
 /* Small tiles get tighter padding and type. */
@@ -4995,23 +5117,69 @@ footer {
 
 /* Portfolio completion (portfolio-progress.tsx): a glowing line along the
    top edge that fills as the page is scrolled. */
+/* The New UI hides the browser's scrollbar: the progress line along the top
+   is the scrollbar there (portfolio-progress.tsx), and it can now run the
+   full width of the window. Wheel, touch and keyboard scrolling are
+   unaffected. Scoped to pages that render .new-ui-root. */
+html:has(.new-ui-root) {
+  scrollbar-width: none;
+}
+
+html:has(.new-ui-root)::-webkit-scrollbar {
+  display: none;
+}
+
+/* The progress line doubles as a scrollbar. The element itself is a taller,
+   invisible hit area along the top edge so it is easy to grab; the visible
+   line is its first 2px, which thickens while hovered or dragged. */
 .new-ui-progress-bar {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 60;
+  height: 12px;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.new-ui-progress-bar::before {
+  /* Faint track, shown on hover so the full length reads as draggable. */
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 2px;
-  pointer-events: none;
+  background: rgba(var(--new-ui-accent-rgb), 0.12);
+  opacity: 0;
+  transition: opacity 200ms ease, height 200ms ease;
 }
 
 .new-ui-progress-bar span {
+  position: relative;
   display: block;
-  height: 100%;
+  height: 2px;
   background: linear-gradient(90deg, rgba(var(--new-ui-accent-rgb), 0.35), var(--new-ui-accent), #e6fbff);
   box-shadow: 0 0 10px rgba(var(--new-ui-accent-rgb), 0.8);
   transform: scaleX(0);
   transform-origin: left center;
+  transition: height 200ms ease;
+}
+
+.new-ui-progress-bar:hover::before,
+.new-ui-progress-bar.is-dragging::before {
+  height: 5px;
+  opacity: 1;
+}
+
+.new-ui-progress-bar:hover span,
+.new-ui-progress-bar.is-dragging span {
+  height: 5px;
+}
+
+.new-ui-progress-bar.is-dragging {
+  cursor: grabbing;
 }
 
 /* "View" cursor badge (view-cursor.tsx). */
@@ -5356,6 +5524,56 @@ footer {
   border-bottom-color: var(--new-ui-accent);
 }
 
+/* Each field plus room for its message, so a message appearing doesn't
+   shove the rest of the form around. */
+.new-ui-idea-field {
+  position: relative;
+  display: block;
+}
+
+.new-ui-idea-form input[aria-invalid="true"] {
+  border-bottom-color: #f9a8a8;
+}
+
+/* Validation message in the site's style: small, soft red with a glow,
+   sliding in under the field. */
+.new-ui-idea-error {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding-top: 0.45rem;
+  font-size: 0.8rem;
+  color: #fca5a5;
+  text-shadow: 0 0 12px rgba(252, 165, 165, 0.35);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 200ms ease, transform 200ms ease;
+  pointer-events: none;
+}
+
+.new-ui-idea-error.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.new-ui-idea-error.is-visible::before {
+  content: "!";
+  display: grid;
+  place-items: center;
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  border-radius: 50%;
+  background: rgba(252, 165, 165, 0.18);
+  border: 1px solid rgba(252, 165, 165, 0.6);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-shadow: none;
+}
+
 .new-ui-idea-submit {
   align-self: flex-start;
   padding: 0.75rem 1.75rem;
@@ -5370,6 +5588,49 @@ footer {
 
 .new-ui-idea-submit:hover {
   transform: translateY(-2px);
+}
+
+.new-ui-idea-submit:disabled {
+  opacity: 0.7;
+  cursor: progress;
+  transform: none;
+}
+
+.new-ui-idea-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+
+/* Sent / failed feedback beside the button. */
+.new-ui-idea-status {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.new-ui-idea-status:empty {
+  display: none;
+}
+
+.new-ui-idea-status.is-sent {
+  color: #86efac;
+  text-shadow: 0 0 12px rgba(134, 239, 172, 0.35);
+}
+
+.new-ui-idea-status.is-error {
+  color: #fca5a5;
+  text-shadow: 0 0 12px rgba(252, 165, 165, 0.35);
+}
+
+/* Bot trap: off-screen, never seen or focused by people. */
+.new-ui-idea-honeypot {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
 }
 
 .new-ui-contact-cards {
@@ -5438,6 +5699,13 @@ footer {
 .new-ui-footer-brand .brand-symbol {
   border-color: rgba(244, 250, 247, 0.5);
   color: #f4faf7;
+}
+
+/* The footer logo, bigger than the header's (2.55rem) — it heads the
+   footer column, level with the row of social tiles below. */
+.new-ui-footer-brand .brand-symbol:has(.new-ui-logo) {
+  width: 5.5rem;
+  height: 5.5rem;
 }
 
 /* Social buttons: brand icons (social-icons.tsx) on dark glass tiles tinted
@@ -5791,24 +6059,428 @@ footer {
   display: none;
 }
 
-.ask-ai-page {
+/* ---------------------------------------------------------------------------
+   Ask AI (/ask-ai) — New UI look: dark teal backdrop with glowing lines,
+   greeting + title, Aaryan's photo in the middle, a pill "Ask me anything"
+   box and topic tiles. Fits one screen; once a question is asked the photo
+   shrinks and the conversation takes the middle.
+--------------------------------------------------------------------------- */
+.ask-ai-v2 {
   --new-ui-accent: #7dd3fc;
   --new-ui-accent-strong: #38bdf8;
   --new-ui-accent-rgb: 125, 211, 252;
   --new-ui-accent-ink: #062a3a;
 
-  display: flow-root;
-  min-height: 100svh;
-  background: var(--dark-surface);
-  color: #f4faf7;
-  padding-bottom: 4rem;
-  animation: ask-ai-page-enter 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 clamp(1.25rem, 5vw, 3rem) clamp(1rem, 3vh, 2rem);
 }
 
-@keyframes ask-ai-page-enter {
+.ask-ai-v2 > :not(.new-ui-backdrop) {
+  position: relative;
+  z-index: 1;
+}
+
+.ask-ai-bar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1100px;
+  margin: clamp(0.75rem, 2vh, 1.25rem) auto 0;
+}
+
+.ask-ai-brand {
+  display: block;
+  width: 2.75rem;
+  height: 2.75rem;
+  transition: transform 220ms var(--ease-out);
+}
+
+.ask-ai-brand:hover {
+  transform: rotate(-8deg);
+}
+
+.ask-ai-stage {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-height: 0;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* Greeting and title. */
+.ask-ai-hero {
+  flex: none;
+  margin-top: clamp(0.25rem, 2vh, 1.25rem);
+  text-align: center;
+  animation: ask-ai-rise 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.ask-ai-greeting {
+  margin: 0;
+  font-size: clamp(1.05rem, 2.6vh, 1.6rem);
+  font-weight: 700;
+  color: rgba(244, 250, 247, 0.85);
+}
+
+.ask-ai-heading {
+  margin: 0.15em 0 0;
+  font-family: "Lobster", cursive;
+  font-size: clamp(2.2rem, min(7vw, 9vh), 5.5rem);
+  font-weight: 400;
+  line-height: 1.05;
+  color: #f4faf7;
+  text-shadow: 0 0 40px rgba(var(--new-ui-accent-rgb), 0.35);
+}
+
+/* The photo: an arched portrait with a soft glow behind it. Takes whatever
+   height is left in the middle; shrinks to an avatar once chatting. */
+.ask-ai-photo {
+  position: relative;
+  display: grid;
+  flex: 1 1 auto;
+  place-items: center;
+  width: 100%;
+  min-height: 0;
+  margin: clamp(0.75rem, 2.5vh, 1.75rem) 0;
+  animation: ask-ai-rise 800ms 100ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.ask-ai-photo-glow {
+  position: absolute;
+  width: min(60%, 420px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(var(--new-ui-accent-rgb), 0.35), transparent 65%);
+  filter: blur(10px);
+  animation: ask-ai-breathe 5s ease-in-out infinite;
+}
+
+.ask-ai-photo-frame {
+  position: relative;
+  display: block;
+  height: 100%;
+  max-height: 340px;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border: 1px solid rgba(var(--new-ui-accent-rgb), 0.45);
+  border-radius: 999px 999px 1.75rem 1.75rem;
+  box-shadow:
+    0 0 0 6px rgba(var(--new-ui-accent-rgb), 0.06),
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    0 0 50px rgba(var(--new-ui-accent-rgb), 0.2);
+  transition: max-height 500ms cubic-bezier(0.16, 1, 0.3, 1), border-radius 500ms ease;
+}
+
+.ask-ai-photo-frame img {
+  object-fit: cover;
+  object-position: 50% 28%;
+}
+
+@keyframes ask-ai-breathe {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+/* Chatting: photo becomes a small round avatar; the log fills the middle. */
+.ask-ai-stage.is-chatting .ask-ai-photo {
+  flex: none;
+  height: auto;
+  margin: clamp(0.5rem, 1.5vh, 1rem) 0;
+  animation: none;
+}
+
+.ask-ai-stage.is-chatting .ask-ai-photo-frame {
+  height: 64px;
+  max-height: 64px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+
+.ask-ai-stage.is-chatting .ask-ai-photo-glow {
+  width: 110px;
+}
+
+.ask-ai-stage.is-chatting .ask-ai-greeting {
+  display: none;
+}
+
+.ask-ai-stage.is-chatting .ask-ai-heading {
+  font-size: clamp(1.8rem, min(5vw, 6vh), 3rem);
+}
+
+.ask-ai-log {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.8rem;
+  width: 100%;
+  max-width: 760px;
+  min-height: 0;
+  margin-bottom: 1rem;
+  padding: 0.25rem 0.25rem 0.5rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--new-ui-accent-rgb), 0.3) transparent;
+  mask-image: linear-gradient(to bottom, transparent, #000 1.25rem);
+}
+
+.ask-ai-row {
+  display: flex;
+  animation: ask-ai-rise 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.ask-ai-row:first-child {
+  margin-top: auto;
+}
+
+.ask-ai-row-user {
+  justify-content: flex-end;
+}
+
+.ask-ai-bubble {
+  max-width: min(80%, 560px);
+  padding: 0.8rem 1.05rem;
+  border-radius: 1.1rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.ask-ai-bubble a {
+  color: var(--new-ui-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ask-ai-bubble-assistant {
+  border: 1px solid rgba(244, 250, 247, 0.1);
+  border-bottom-left-radius: 0.35rem;
+  background: rgba(var(--dark-surface-rgb), 0.7);
+  color: rgba(244, 250, 247, 0.9);
+  backdrop-filter: blur(10px);
+}
+
+.ask-ai-bubble-user {
+  border-bottom-right-radius: 0.35rem;
+  background: linear-gradient(135deg, var(--new-ui-accent), var(--new-ui-accent-strong));
+  color: var(--new-ui-accent-ink);
+  font-weight: 600;
+}
+
+.ask-ai-typing {
+  display: inline-flex;
+  gap: 0.3rem;
+  padding-block: 1rem;
+}
+
+.ask-ai-typing > span[aria-hidden] {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--new-ui-accent);
+  animation: ask-ai-dot 1s ease-in-out infinite;
+}
+
+.ask-ai-typing > span[aria-hidden]:nth-of-type(3) {
+  animation-delay: 0.15s;
+}
+
+.ask-ai-typing > span[aria-hidden]:nth-of-type(4) {
+  animation-delay: 0.3s;
+}
+
+@keyframes ask-ai-dot {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+/* "Ask me anything" pill with a round send button inside it. */
+.ask-ai-form {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 620px;
+  padding: 0.4rem 0.4rem 0.4rem 1.4rem;
+  border: 1px solid rgba(244, 250, 247, 0.16);
+  border-radius: 999px;
+  background: rgba(var(--dark-surface-rgb), 0.65);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+  animation: ask-ai-rise 800ms 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.ask-ai-form:focus-within {
+  border-color: rgba(var(--new-ui-accent-rgb), 0.7);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.35),
+    0 0 0 4px rgba(var(--new-ui-accent-rgb), 0.12),
+    0 0 30px rgba(var(--new-ui-accent-rgb), 0.15);
+}
+
+.ask-ai-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.75rem 0;
+  border: 0;
+  background: none;
+  color: #f4faf7;
+  font: inherit;
+  font-size: 1.02rem;
+}
+
+.ask-ai-form input::placeholder {
+  color: rgba(244, 250, 247, 0.45);
+}
+
+.ask-ai-form input:focus {
+  outline: none;
+}
+
+.ask-ai-form button {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.9rem;
+  height: 2.9rem;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--new-ui-accent), var(--new-ui-accent-strong));
+  color: var(--new-ui-accent-ink);
+  cursor: pointer;
+  transition: transform 200ms ease, box-shadow 200ms ease, opacity 200ms ease;
+}
+
+.ask-ai-form button svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ask-ai-form button:hover:not(:disabled) {
+  transform: translateX(2px);
+  box-shadow: 0 0 22px rgba(var(--new-ui-accent-rgb), 0.55);
+}
+
+.ask-ai-form button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* Topic tiles: icon over label, one row on wide screens. */
+.ask-ai-topics {
+  display: grid;
+  flex: none;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: clamp(0.5rem, 1.2vw, 0.9rem);
+  width: 100%;
+  max-width: 860px;
+  margin-top: clamp(0.75rem, 2.5vh, 1.5rem);
+  animation: ask-ai-rise 800ms 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.ask-ai-topics button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: clamp(4.25rem, 11vh, 6.25rem);
+  border: 1px solid rgba(244, 250, 247, 0.12);
+  border-radius: 1.1rem;
+  background: rgba(var(--dark-surface-rgb), 0.55);
+  backdrop-filter: blur(10px);
+  color: rgba(244, 250, 247, 0.88);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 220ms ease,
+    background-color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.ask-ai-topics svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: none;
+  stroke: var(--new-ui-accent);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 6px rgba(var(--new-ui-accent-rgb), 0.45));
+}
+
+.ask-ai-topics button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  border-color: rgba(var(--new-ui-accent-rgb), 0.5);
+  background: rgba(var(--new-ui-accent-rgb), 0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 24px rgba(var(--new-ui-accent-rgb), 0.18);
+}
+
+.ask-ai-topics button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* Chatting: the tiles shrink to a row of compact chips. */
+.ask-ai-stage.is-chatting .ask-ai-topics {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+  animation: none;
+}
+
+.ask-ai-stage.is-chatting .ask-ai-topics button {
+  flex-direction: row;
+  gap: 0.4rem;
+  height: auto;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+}
+
+.ask-ai-stage.is-chatting .ask-ai-topics svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+@keyframes ask-ai-rise {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(18px);
   }
   to {
     opacity: 1;
@@ -5816,186 +6488,43 @@ footer {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .ask-ai-page {
-    animation: none;
+@media (max-width: 700px) {
+  .ask-ai-topics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .ask-ai-topics button {
+    height: clamp(3.75rem, 9vh, 5rem);
+    font-size: 0.85rem;
+  }
+
+  .ask-ai-bubble {
+    max-width: 88%;
+  }
+
+  /* Phones: chips scroll sideways in one row while chatting. */
+  .ask-ai-stage.is-chatting .ask-ai-topics {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .ask-ai-stage.is-chatting .ask-ai-topics button {
+    flex: none;
   }
 }
 
-.ask-ai-persistent-back {
-  position: fixed;
-  top: 1.25rem;
-  left: 1.25rem;
-  z-index: 45;
-  padding: 0.55rem 1rem;
-  border-radius: 999px;
-  border: 1px solid rgba(244, 250, 247, 0.2);
-  background: rgba(var(--dark-surface-rgb), 0.6);
-  backdrop-filter: blur(10px);
-  color: #f4faf7;
-  font-size: 0.82rem;
-  font-weight: 700;
-  transition: border-color 220ms ease, background 220ms ease, transform 220ms ease;
-}
-
-.ask-ai-persistent-back:hover {
-  border-color: rgba(125, 211, 252, 0.6);
-  background: rgba(var(--dark-surface-rgb), 0.8);
-  transform: translateY(-1px);
-}
-
-.ask-ai-page .about-assistant {
-  --assistant-bg: #0c110e;
-  --assistant-ink: #f3f7f4;
-  --assistant-muted: #a8b3ab;
-  --assistant-glass: rgba(20, 28, 23, 0.76);
-}
-
-.ai-chat {
-  max-width: 720px;
-  margin-inline: auto;
-  padding-inline: clamp(1.5rem, 6vw, 5rem);
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.ai-chat-log {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-  min-height: 220px;
-}
-
-.ai-chat-bubble {
-  max-width: 80%;
-  padding: 0.85rem 1.1rem;
-  border-radius: 1rem;
-  line-height: 1.5;
-  font-size: 0.95rem;
-}
-
-.ai-chat-bubble-assistant {
-  align-self: flex-start;
-  background: rgba(125, 211, 252, 0.1);
-  border: 1px solid rgba(125, 211, 252, 0.2);
-  border-bottom-left-radius: 0.25rem;
-}
-
-.ai-chat-bubble-user {
-  align-self: flex-end;
-  background: linear-gradient(135deg, #7dd3fc, #38bdf8);
-  color: #062a3a;
-  font-weight: 600;
-  border-bottom-right-radius: 0.25rem;
-}
-
-.ai-chat-prompts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-}
-
-.ai-chat-prompts button {
-  padding: 0.5rem 0.9rem;
-  border: 1px solid rgba(244, 250, 247, 0.2);
-  border-radius: 999px;
-  background: transparent;
-  color: rgba(244, 250, 247, 0.85);
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: border-color 220ms ease, color 220ms ease;
-}
-
-.ai-chat-prompts button:hover {
-  border-color: #7dd3fc;
-  color: #f4faf7;
-}
-
-.ai-chat-form {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.ai-chat-form input {
-  flex: 1;
-  padding: 0.85rem 1.1rem;
-  border-radius: 999px;
-  border: 1px solid rgba(244, 250, 247, 0.25);
-  background: rgba(244, 250, 247, 0.05);
-  color: #f4faf7;
-  font-size: 0.95rem;
-}
-
-.ai-chat-form input::placeholder {
-  color: rgba(244, 250, 247, 0.5);
-}
-
-.ai-chat-form input:focus {
-  outline: none;
-  border-color: #7dd3fc;
-}
-
-.ai-chat-form button {
-  padding: 0.85rem 1.5rem;
-  border: none;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #7dd3fc, #38bdf8);
-  color: #062a3a;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.ai-chat-form button:hover {
-  transform: translateY(-2px);
-}
-
-.ai-chat-form button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.ask-ai-footer {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 40;
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-  padding: 1.25rem clamp(1.5rem, 6vw, 5rem);
-  background: rgba(var(--dark-surface-rgb), 0.72);
-  backdrop-filter: blur(14px) saturate(130%);
-  border-top: 1px solid rgba(244, 250, 247, 0.12);
-  transform: translateY(100%);
-  transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.ask-ai-footer-visible {
-  transform: translateY(0);
-}
-
-.ask-ai-footer .brand-symbol {
-  border-color: rgba(244, 250, 247, 0.5);
-  color: #f4faf7;
-}
-
-.ask-ai-footer-back {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: rgba(244, 250, 247, 0.7);
-  transition: color 220ms ease;
-}
-
-.ask-ai-footer-back:hover {
-  color: #f4faf7;
-}
-
-.ask-ai-footer-spacer {
-  flex: 1;
+@media (prefers-reduced-motion: reduce) {
+  .ask-ai-hero,
+  .ask-ai-photo,
+  .ask-ai-photo-glow,
+  .ask-ai-form,
+  .ask-ai-topics,
+  .ask-ai-row,
+  .ask-ai-typing > span[aria-hidden] {
+    animation: none;
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -6158,3 +6687,492 @@ footer {
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Loading screen (page-loader.tsx)
+--------------------------------------------------------------------------- */
+.new-ui-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  background: var(--dark-surface);
+  color: #f4faf7;
+  transition: opacity 600ms ease, visibility 600ms ease;
+  /* Safety net: if JavaScript never runs, get out of the way anyway. */
+  animation: new-ui-loader-failsafe 0s linear 6s forwards;
+}
+
+/* Already loaded once in this tab (flag set before first paint in
+   layout.tsx): no loading screen at all. */
+html.new-ui-loaded .new-ui-loader {
+  display: none;
+}
+
+.new-ui-loader.is-leaving {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.new-ui-loader-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.new-ui-loader-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.new-ui-loader-mark {
+  display: grid;
+  place-items: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  border: 1px solid rgba(var(--new-ui-accent-rgb), 0.6);
+  border-radius: 50%;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 700;
+  box-shadow: 0 0 30px rgba(var(--new-ui-accent-rgb), 0.35);
+  animation: new-ui-loader-pulse 1.8s ease-in-out infinite;
+}
+
+.new-ui-loader-name {
+  font-family: var(--font-script);
+  font-size: clamp(2.5rem, 9vw, 4.5rem);
+  line-height: 1.2;
+  text-shadow: 0 0 30px rgba(var(--new-ui-accent-rgb), 0.3);
+}
+
+.new-ui-loader-bar {
+  position: relative;
+  width: min(60vw, 240px);
+  height: 2px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(244, 250, 247, 0.12);
+}
+
+.new-ui-loader-bar span {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(var(--new-ui-accent-rgb), 0.3), var(--new-ui-accent), #e6fbff);
+  box-shadow: 0 0 10px rgba(var(--new-ui-accent-rgb), 0.8);
+  transform-origin: left center;
+  /* Driven by page-loader.tsx to match the percentage. */
+  transform: scaleX(0);
+}
+
+.new-ui-loader-percent {
+  margin-top: -0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  color: var(--new-ui-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes new-ui-loader-pulse {
+  50% {
+    box-shadow: 0 0 45px rgba(var(--new-ui-accent-rgb), 0.6);
+  }
+}
+
+@keyframes new-ui-loader-failsafe {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .new-ui-loader-mark {
+    animation: none;
+  }
+}
+
+/* The profile photo in the hero, About and Awards cards. Cropped to keep
+   the face in view: it sits about a third of the way down the tall original. */
+.new-ui-portrait,
+.new-ui-about-portrait,
+.new-ui-awards-portrait {
+  overflow: hidden;
+}
+
+.new-ui-portrait-photo {
+  object-fit: cover;
+  object-position: 50% 30%;
+}
+
+/* The "A" emblem on its own — no circle — in the header, footer and
+   loading screen. The badge it sits in keeps its size but loses its ring,
+   and the hover rotation still applies. */
+.brand-symbol:has(.new-ui-logo),
+.new-ui-loader-mark:has(.new-ui-logo),
+.brand:hover .brand-symbol:has(.new-ui-logo) {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.new-ui-logo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(45, 212, 230, 0.3));
+}
+
+/* The loading screen's badge pulsed a box-shadow, which on the borderless
+   holder drew a glowing rectangle around the letter. The pulse now lives on
+   the letter itself, as a glow that follows its shape. */
+.new-ui-loader-mark:has(.new-ui-logo) {
+  animation: none;
+}
+
+.new-ui-loader-mark .new-ui-logo {
+  animation: new-ui-logo-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes new-ui-logo-pulse {
+  50% {
+    filter: drop-shadow(0 0 14px rgba(45, 212, 230, 0.7));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .new-ui-loader-mark .new-ui-logo {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Project case studies (/new-ui/projects/[slug]) — New UI look. The hero
+   uses the project's own cover via `.new-ui-art-<slug>` (--featured-art).
+--------------------------------------------------------------------------- */
+.case-page {
+  --new-ui-accent: #7dd3fc;
+  --new-ui-accent-strong: #38bdf8;
+  --new-ui-accent-rgb: 125, 211, 252;
+  --new-ui-accent-ink: #062a3a;
+
+  display: flow-root;
+  overflow: hidden;
+  padding: 0 clamp(1.25rem, 5vw, 3rem) 6rem;
+}
+
+.case-page > :not(.new-ui-backdrop) {
+  position: relative;
+  z-index: 1;
+}
+
+.case-hero {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  max-width: 1100px;
+  min-height: clamp(420px, 68vh, 640px);
+  margin: clamp(1.5rem, 4vh, 2.5rem) auto 0;
+  padding: clamp(1.75rem, 4vw, 3rem);
+  overflow: hidden;
+  border: 1px solid rgba(var(--new-ui-accent-rgb), 0.22);
+  border-radius: 1.75rem;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+  animation: ask-ai-rise 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.case-hero-art {
+  position: absolute;
+  inset: 0;
+  background: var(--featured-art);
+}
+
+/* Extra fade so the title stays readable over any cover. */
+.case-hero-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(4, 16, 20, 0.92) 5%, rgba(4, 16, 20, 0.35) 55%, transparent);
+}
+
+.case-hero-copy {
+  position: relative;
+  max-width: 720px;
+}
+
+.case-eyebrow {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--new-ui-accent);
+}
+
+.case-title {
+  margin: 0;
+  font-family: "Lobster", cursive;
+  font-size: clamp(3.25rem, 10vw, 7rem);
+  font-weight: 400;
+  line-height: 1;
+  color: #f4faf7;
+  text-shadow: 0 0 40px rgba(var(--new-ui-accent-rgb), 0.35);
+}
+
+.case-tagline {
+  margin: 0.75rem 0 0;
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
+  color: rgba(244, 250, 247, 0.82);
+}
+
+.case-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.case-stack li {
+  padding: 0.4rem 0.85rem;
+  border: 1px solid rgba(var(--new-ui-accent-rgb), 0.35);
+  border-radius: 999px;
+  background: rgba(var(--new-ui-accent-rgb), 0.1);
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: #e6f7ff;
+  backdrop-filter: blur(6px);
+}
+
+.case-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.case-body {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.case-section {
+  margin-top: clamp(3.5rem, 8vw, 5.5rem);
+  animation: ask-ai-rise 800ms 120ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.case-section h2 {
+  margin: 0 0 1.25rem;
+  font-family: "Lobster", cursive;
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  font-weight: 400;
+  color: #f4faf7;
+}
+
+.case-section h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  color: #f4faf7;
+}
+
+.case-section p {
+  margin: 0;
+  line-height: 1.7;
+  color: rgba(244, 250, 247, 0.75);
+}
+
+.case-lead {
+  max-width: 820px;
+  font-size: clamp(1.1rem, 2vw, 1.3rem);
+  color: rgba(244, 250, 247, 0.88) !important;
+}
+
+.case-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.case-split > .case-section {
+  margin-top: clamp(3.5rem, 8vw, 5.5rem);
+}
+
+.case-card {
+  padding: clamp(1.25rem, 3vw, 1.75rem);
+  border: 1px solid rgba(244, 250, 247, 0.12);
+  border-radius: 1.25rem;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(var(--new-ui-accent-rgb), 0.08), transparent 50%),
+    rgba(var(--dark-surface-rgb), 0.6);
+  backdrop-filter: blur(10px);
+  transition: border-color 250ms ease, transform 250ms ease;
+}
+
+.case-card:hover {
+  border-color: rgba(var(--new-ui-accent-rgb), 0.4);
+  transform: translateY(-2px);
+}
+
+.case-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.case-feature-number {
+  display: block;
+  margin-bottom: 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--new-ui-accent);
+}
+
+/* Architecture: a vertical glowing rail with one stop per layer. */
+.case-architecture {
+  position: relative;
+  margin: 0;
+  padding: 0 0 0 2rem;
+  list-style: none;
+}
+
+.case-architecture::before {
+  content: "";
+  position: absolute;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  left: 0.45rem;
+  width: 2px;
+  background: linear-gradient(var(--new-ui-accent), rgba(var(--new-ui-accent-rgb), 0.1));
+  box-shadow: 0 0 10px rgba(var(--new-ui-accent-rgb), 0.5);
+}
+
+.case-architecture li {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(130px, 180px) 1fr;
+  gap: 1rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid rgba(244, 250, 247, 0.08);
+}
+
+.case-architecture li::before {
+  content: "";
+  position: absolute;
+  top: 1.2rem;
+  left: -1.85rem;
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+  background: var(--dark-surface);
+  border: 2px solid var(--new-ui-accent);
+  box-shadow: 0 0 10px rgba(var(--new-ui-accent-rgb), 0.6);
+}
+
+.case-architecture strong {
+  color: #f4faf7;
+}
+
+.case-architecture span {
+  line-height: 1.6;
+  color: rgba(244, 250, 247, 0.75);
+}
+
+.case-footer-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-top: clamp(4rem, 9vw, 6rem);
+  padding-top: 2rem;
+  border-top: 1px solid rgba(244, 250, 247, 0.1);
+}
+
+/* The old site underlines every `nav a` with an ::after line; the
+   "← All projects" pill and the "Next project" card aren't text links. */
+.case-footer-nav .new-ui-back-cta::after,
+.case-footer-nav .case-next::after {
+  display: none;
+}
+
+.case-next {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  width: min(100%, 360px);
+  height: 140px;
+  padding: 1.1rem 1.25rem;
+  overflow: hidden;
+  border: 1px solid rgba(var(--new-ui-accent-rgb), 0.25);
+  border-radius: 1.1rem;
+  color: #f4faf7;
+  text-decoration: none;
+  transition: transform 250ms ease, box-shadow 250ms ease;
+}
+
+.case-next:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 30px rgba(var(--new-ui-accent-rgb), 0.25);
+}
+
+.case-next-copy {
+  position: relative;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.case-next-copy small {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--new-ui-accent);
+}
+
+.case-next-copy strong {
+  font-family: "Lobster", cursive;
+  font-size: 1.8rem;
+  font-weight: 400;
+}
+
+@media (max-width: 700px) {
+  .case-split {
+    grid-template-columns: 1fr;
+  }
+
+  .case-architecture li {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+
+  .case-footer-nav {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .case-next {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .case-hero,
+  .case-section {
+    animation: none;
+  }
+}
+
+/* Coming back to the portfolio with Back: hidden for an instant while the
+   scroll position is restored (smooth-scroll.tsx), so it reappears exactly
+   where the visitor left it instead of showing the top and gliding down. */
+html.new-ui-restoring #smooth-content {
+  visibility: hidden;
+}

@@ -23,13 +23,16 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
  */
 
 /**
- * Where the spread begins/ends, as ScrollTrigger positions on the row. Before
- * SPREAD_START the cards simply scroll up still stacked, so the "single card"
- * is properly on screen before it opens — starting at the bottom edge meant
- * the fan-out was mostly over before the stack was even visible.
+ * Where the spread begins/ends, as ScrollTrigger positions on the section's
+ * HEADING (not the card row): the cards are fully spread by the time the
+ * "Work Procedure" heading's top reaches 12% down the screen — i.e. while
+ * the heading is still near the top, the cards already sit in their final
+ * row. Tied to the heading so the extra space between the heading and the
+ * cards can't delay it. Before SPREAD_START the cards scroll up still
+ * stacked, so the single card is on screen before it opens.
  */
-const SPREAD_START = "top 60%";
-const SPREAD_END = "top 20%";
+const SPREAD_START = "top 62%";
+const SPREAD_END = "top 12%";
 
 export function WorkStepsSpread() {
   useEffect(() => {
@@ -66,7 +69,7 @@ export function WorkStepsSpread() {
       const tl = gsap.timeline({
         scrollTrigger: {
           id: "work-spread-main",
-          trigger: row,
+          trigger: row.closest("section")?.querySelector("h2") ?? row,
           start: SPREAD_START,
           end: SPREAD_END,
           scrub: true,

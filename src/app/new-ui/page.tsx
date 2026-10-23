@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 // Script face for the section headings (see --font-script in globals.css).
@@ -20,6 +21,16 @@ import {
   LinkedInIcon,
   MailIcon,
 } from "./_components/social-icons";
+import { PageLoader } from "./_components/page-loader";
+import { HeroVideo } from "./_components/hero-video";
+import {
+  siNextdotjs,
+  siNodedotjs,
+  siPostgresql,
+  siPython,
+  siReact,
+  siTypescript,
+} from "simple-icons";
 import { SmoothScroll } from "./_components/smooth-scroll";
 import { MotionPathReveal } from "./_components/motion-path-reveal";
 import { PathEditor } from "./_components/path-editor";
@@ -30,6 +41,42 @@ import { PathEditor } from "./_components/path-editor";
  * artwork and panel colour (`.new-ui-art-<slug>` in globals.css) and pairs
  * each tile with its panel. Copy comes from the project data on the old page.
  */
+
+// Skills card logos, drawn in the site's accent colour (see
+// .new-ui-skills-grid svg in globals.css). Each tile opens that
+// technology's GeeksforGeeks tutorial in a new tab.
+const techStack = [
+  {
+    name: "TypeScript",
+    icon: siTypescript,
+    docs: "https://www.geeksforgeeks.org/typescript/typescript-tutorial/",
+  },
+  {
+    name: "React",
+    icon: siReact,
+    docs: "https://www.geeksforgeeks.org/reactjs/react/",
+  },
+  {
+    name: "Next.js",
+    icon: siNextdotjs,
+    docs: "https://www.geeksforgeeks.org/nextjs/nextjs-tutorial/",
+  },
+  {
+    name: "Node.js",
+    icon: siNodedotjs,
+    docs: "https://www.geeksforgeeks.org/node-js/nodejs/",
+  },
+  {
+    name: "Python",
+    icon: siPython,
+    docs: "https://www.geeksforgeeks.org/python/python-programming-language-tutorial/",
+  },
+  {
+    name: "PostgreSQL",
+    icon: siPostgresql,
+    docs: "https://www.geeksforgeeks.org/postgresql/postgresql-tutorial/",
+  },
+];
 const featuredProjects = [
   {
     slug: "skillchain",
@@ -52,7 +99,43 @@ const featuredProjects = [
     tagline: "Real-time geospatial web experience",
     stack: "React · Firebase · WebSockets · WebGL Earth",
   },
+  {
+    slug: "blinkflow",
+    title: "BlinkFlow",
+    tag: "Desktop app · Electron",
+    tagline: "Privacy-first 20-20-20 eye-care timer",
+    stack: "React · TypeScript · Vite · Electron",
+  },
+  {
+    slug: "csm-order-tracker",
+    title: "CSM Order Tracker",
+    tag: "Full-stack · Realtime",
+    tagline: "Factory order tracking across departments",
+    stack: "React · TypeScript · Firebase · Firestore",
+  },
+  {
+    slug: "matchmyresume",
+    title: "MatchMyResume",
+    tag: "AI / NLP · Full-stack",
+    tagline: "NLP résumé analyser against job descriptions",
+    stack: "React · FastAPI · spaCy · scikit-learn",
+  },
+  {
+    slug: "focus-tide",
+    title: "Focus Tide",
+    tag: "Web app · Productivity",
+    tagline: "Pomodoro timer with ambient soundscapes",
+    stack: "JavaScript · Vite · Web Audio",
+  },
 ];
+
+/**
+ * How many projects (from the top of `featuredProjects`) get the automatic
+ * zoom-in while Featured Work is pinned. The rest still have tiles on the
+ * board and open their page when clicked — they just don't auto-play, which
+ * keeps the pinned stretch short.
+ */
+const SHOWCASE_COUNT = 3;
 
 /**
  * Scroll-triggered entrances, one per section.
@@ -130,28 +213,30 @@ const sectionReveals = [
 ];
 
 /**
- * Where each Featured Work tile sits, measured off the reference moodboard:
- * left, top and width as % of the tile area's width, plus width/height.
- * Projects fill these in order — three projects take the first row; add
- * more to `featuredProjects` and they land in the next spots automatically.
+ * Where each Featured Work tile sits: left, top and width as % of the tile
+ * area's width, plus width/height. A scattered arrangement with clear space
+ * (at least ~4% of the width) between every pair of tiles. Projects fill
+ * these in order; the eighth spot is spare.
  */
 const featuredSlots = [
-  { x: 0.6, y: 6, w: 29.1, ratio: 1.59 },
-  { x: 47.4, y: 4.3, w: 13, ratio: 1.09, compact: true },
-  { x: 77.6, y: 13.3, w: 21.4, ratio: 1.96 },
-  { x: 35.1, y: 36.4, w: 21.4, ratio: 1.97 },
-  { x: 63.6, y: 30.9, w: 21.6, ratio: 1.26 },
-  { x: 0, y: 55.7, w: 19.4, ratio: 0.75 },
-  { x: 49, y: 62.2, w: 20.5, ratio: 0.9 },
-  { x: 77.4, y: 62.7, w: 21.4, ratio: 1.97 },
+  // Order matches `featuredProjects`.
+  { x: 1, y: 0, w: 37.8, ratio: 1.59 }, // SkillChain — top left
+  { x: 74, y: 31, w: 16.9, ratio: 1.09, compact: true }, // Work-Stack — middle right
+  { x: 38, y: 57, w: 26.65, ratio: 0.9 }, // Soul-Voyage — bottom middle
+  { x: 2, y: 31, w: 27.8, ratio: 1.97 }, // BlinkFlow — middle left
+  { x: 34, y: 29, w: 28.1, ratio: 1.26 }, // CSM Order Tracker — middle
+  { x: 6, y: 54, w: 25.2, ratio: 0.75 }, // MatchMyResume — bottom left
+  { x: 69, y: 5, w: 27.8, ratio: 1.96 }, // Focus Tide — top right
+  { x: 70, y: 56, w: 24, ratio: 1.6 }, // spare — bottom right
 ];
 
 /**
  * How much bigger than the reference the tiles are drawn. Each tile grows
  * around its own centre, so the arrangement keeps its shape, and is then
- * nudged inward if that pushed it past an edge.
+ * nudged inward if that pushed it past an edge. The slots above are already
+ * drawn at full size, so this is 1.
  */
-const TILE_SCALE = 1.2;
+const TILE_SCALE = 1;
 
 // Up to eight projects; a ninth would need another slot above.
 const usedSlots = featuredSlots.slice(0, featuredProjects.length).map((slot) => {
@@ -207,6 +292,7 @@ export default function NewUI() {
       {/* Fixed-position elements live outside #smooth-content — a transformed
           ancestor would otherwise become their containing block and drag them
           up the page along with the content. */}
+      <PageLoader />
       <NewUiHeader />
       <ViewCursor />
       <PortfolioProgress />
@@ -257,19 +343,7 @@ function NewUiBody() {
       </div>
 
       <section className="new-ui-hero">
-        <div className="new-ui-hero-video" aria-hidden="true">
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            poster="/video/hero-bg-poster.jpg"
-          >
-            <source src="/video/hero-bg.mp4" type="video/mp4" />
-          </video>
-          <span className="new-ui-hero-video-overlay" />
-        </div>
+        <HeroVideo />
 
         <div className="new-ui-hero-copy">
           <h1 className="new-ui-name">Aaryan Gupta</h1>
@@ -278,18 +352,26 @@ function NewUiBody() {
             and companies launch world-class products.
           </p>
           <div className="new-ui-actions">
-            <a className="new-ui-primary" href="mailto:aaryangupta2005@gmail.com">
+            <a className="new-ui-primary" href="#contact">
               Hire Me
             </a>
-            <Link className="new-ui-secondary" href="/#work">
+            <a className="new-ui-secondary" href="#featured-work">
               View My Work
-            </Link>
+            </a>
           </div>
         </div>
 
         <div className="new-ui-portrait" aria-hidden="true">
           <span className="new-ui-portrait-glow" />
-          <span className="new-ui-portrait-mark">AG</span>
+          <Image
+            className="new-ui-portrait-photo"
+            src="/profile/aaryan.webp"
+            alt="Aaryan Gupta"
+            fill
+            sizes="(max-width: 900px) 90vw, 540px"
+            loading="eager"
+            fetchPriority="high"
+          />
         </div>
       </section>
 
@@ -300,30 +382,46 @@ function NewUiBody() {
           <aside className="new-ui-skills-card">
             <h3>Skills &amp; Tech Stack</h3>
             <div className="new-ui-skills-grid">
-              <span>React</span>
-              <span>Python</span>
-              <span>Node.js</span>
-              <span>TypeScript</span>
+              {techStack.map(({ name, icon, docs }) => (
+                <a
+                  key={name}
+                  href={docs}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`${name} tutorial on GeeksforGeeks (opens in a new tab)`}
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d={icon.path} />
+                  </svg>
+                  {name}
+                </a>
+              ))}
             </div>
           </aside>
 
           <div className="new-ui-about-main">
             <div className="new-ui-about-portrait" aria-hidden="true">
               <span className="new-ui-portrait-glow" />
-              <span className="new-ui-portrait-mark">AG</span>
+              <Image
+                className="new-ui-portrait-photo"
+                src="/profile/aaryan.webp"
+                alt="Aaryan Gupta"
+                fill
+                sizes="(max-width: 900px) 90vw, 540px"
+              />
             </div>
             <p className="new-ui-about-copy">
-              I build full-stack products end to end — from AI-powered
-              developer tools to real-time, browser-connected experiences.
-              With a strong foundation in data structures and algorithms, I
-              turn ideas into clean, scalable, deployment-ready builds.
+              I build full-stack products end to end — from AI-powered developer
+              tools to real-time, browser-connected experiences. With a strong
+              foundation in data structures and algorithms, I turn ideas into
+              clean, scalable, deployment-ready builds.
             </p>
           </div>
 
           <div className="new-ui-stats">
             <div className="new-ui-stat-card">
               <span>Projects shipped</span>
-              <strong>03</strong>
+              <strong>07</strong>
             </div>
             <div className="new-ui-stat-card">
               <span>B.Tech CSE (AI &amp; ML)</span>
@@ -343,7 +441,8 @@ function NewUiBody() {
         <div className="new-ui-awards-layout">
           <p className="new-ui-awards-intro">
             Building end-to-end products through academic work, independent
-            projects, and hackathons.
+            projects, and hackathons — alongside a B.Tech in AI &amp; ML and
+            certifications that keep me shipping real-world software.
           </p>
 
           <div className="new-ui-awards-card">
@@ -391,9 +490,15 @@ function NewUiBody() {
           <div className="new-ui-awards-side">
             <div className="new-ui-awards-portrait" aria-hidden="true">
               <span className="new-ui-portrait-glow" />
-              <span className="new-ui-portrait-mark">AG</span>
+              <Image
+                className="new-ui-portrait-photo"
+                src="/profile/aaryan-awards.webp"
+                alt="Aaryan Gupta"
+                fill
+                sizes="(max-width: 900px) 90vw, 540px"
+              />
             </div>
-            <a className="new-ui-primary" href="mailto:aaryangupta2005@gmail.com">
+            <a className="new-ui-primary" href="#contact">
               Hire Me
             </a>
           </div>
@@ -427,16 +532,36 @@ function NewUiBody() {
             },
             {
               number: "04",
+              title: "Database Management",
+              intro: "Design, optimise, and maintain reliable databases.",
+              stack: "PostgreSQL · MongoDB · Supabase",
+            },
+            {
+              number: "05",
+              title: "Deployment & DevOps",
+              intro: "Ship apps to production and keep them running.",
+              stack: "Vercel · Docker · GitHub Actions",
+            },
+            {
+              number: "06",
               title: "AI Feature Integration",
               intro: "Embed AI tools and LLMs into real-world apps.",
               stack: "Python · NLP · TensorFlow",
+            },
+            {
+              number: "07",
+              title: "Blockchain Development",
+              intro: "Build smart contracts and decentralised apps.",
+              stack: "Solidity · Polygon · Ethers.js",
             },
           ].map((service) => (
             <div className="new-ui-service-item" key={service.number}>
               <p className="new-ui-service-intro">{service.intro}</p>
               <div className="new-ui-service-card">
                 <div className="new-ui-service-top">
-                  <span className="new-ui-service-number">{service.number}</span>
+                  <span className="new-ui-service-number">
+                    {service.number}
+                  </span>
                   <h3>{service.title}</h3>
                 </div>
                 <div className="new-ui-service-stat">
@@ -545,7 +670,7 @@ function NewUiBody() {
               >
                 <Link
                   className={`new-ui-featured-card new-ui-art-${project.slug}`}
-                  href="/#work"
+                  href={`/new-ui/projects/${project.slug}`}
                   data-view-cursor
                   data-project={project.slug}
                 >
@@ -564,10 +689,10 @@ function NewUiBody() {
             focusable) except during their turn; desktop only. */}
         <div className="new-ui-showcase-stage">
           <span className="new-ui-showcase-dim" aria-hidden="true" />
-          {featuredProjects.map((project, index) => (
+          {featuredProjects.slice(0, SHOWCASE_COUNT).map((project, index) => (
             <Link
               className={`new-ui-showcase-card new-ui-art-${project.slug}`}
-              href="/#work"
+              href={`/new-ui/projects/${project.slug}`}
               data-view-cursor
               data-project={project.slug}
               key={project.slug}
@@ -586,13 +711,14 @@ function NewUiBody() {
                 <span className="new-ui-showcase-index">
                   {String(index + 1).padStart(2, "0")} · {project.tag}
                 </span>
-                <span className="new-ui-showcase-tagline">{project.tagline}</span>
+                <span className="new-ui-showcase-tagline">
+                  {project.tagline}
+                </span>
                 <span className="new-ui-showcase-stack">{project.stack}</span>
               </span>
             </Link>
           ))}
         </div>
-
       </section>
 
       <section className="new-ui-insights" id="insights">
@@ -604,11 +730,13 @@ function NewUiBody() {
           <div className="new-ui-insights-grid">
             {[
               {
-                title: "Building SkillChain: turning GitHub activity into a skill score",
+                title:
+                  "Building SkillChain: turning GitHub activity into a skill score",
                 tag: "AI / NLP",
               },
               {
-                title: "Real-time sync in Soul-Voyage with Firebase and WebSockets",
+                title:
+                  "Real-time sync in Soul-Voyage with Firebase and WebSockets",
                 tag: "Realtime systems",
               },
               {
@@ -616,7 +744,11 @@ function NewUiBody() {
                 tag: "Full-stack",
               },
             ].map((note) => (
-              <div className="new-ui-insight-card" data-view-cursor key={note.title}>
+              <div
+                className="new-ui-insight-card"
+                data-view-cursor
+                key={note.title}
+              >
                 <span className="new-ui-insight-glow" aria-hidden="true" />
                 <span className="new-ui-insight-tag">{note.tag}</span>
                 <p>{note.title}</p>
@@ -633,7 +765,10 @@ function NewUiBody() {
         <IdeaForm />
 
         <div className="new-ui-contact-cards">
-          <a className="new-ui-contact-card" href="mailto:aaryangupta2005@gmail.com">
+          <a
+            className="new-ui-contact-card"
+            href="mailto:aaryangupta2005@gmail.com"
+          >
             <svg aria-hidden="true" viewBox="0 0 24 24">
               <path d="M4 6h16v12H4z" />
               <path d="m4 7 8 6 8-6" />
@@ -664,7 +799,10 @@ function NewUiBody() {
       <footer className="new-ui-footer">
         <div className="new-ui-footer-top">
           <div className="new-ui-footer-brand">
-            <span className="brand-symbol">AG</span>
+            <span className="brand-symbol">
+              {/* eslint-disable-next-line @next/next/no-img-element -- tiny logo, shown before any JS runs */}
+              <img className="new-ui-logo" src="/logo-a.png" alt="" />
+            </span>
             <div className="new-ui-footer-social">
               <a
                 href="https://github.com/Aaryan0091"
@@ -697,10 +835,13 @@ function NewUiBody() {
           </div>
 
           <nav className="new-ui-footer-nav" aria-label="Footer navigation">
-            <Link href="/">Home</Link>
+            <a href="#top">Home</a>
             <a href="#about">About</a>
             <a href="#services">Services</a>
             <a href="#featured-work">Case Study</a>
+            <a href="/Aaryan_Gupta_Resume.pdf" target="_blank" rel="noreferrer">
+              Résumé
+            </a>
           </nav>
 
           <div className="new-ui-footer-legal">
@@ -714,9 +855,10 @@ function NewUiBody() {
           </a>
         </div>
 
-        <div className="new-ui-footer-watermark" aria-hidden="true">Aaryan Gupta</div>
+        <div className="new-ui-footer-watermark" aria-hidden="true">
+          Aaryan Gupta
+        </div>
       </footer>
-
     </main>
   );
 }
