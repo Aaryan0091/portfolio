@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ReturnLink } from "../new-ui/_components/return-link";
 
 export const metadata = {
   title: "Privacy Policy — Aaryan Gupta",
@@ -7,9 +7,7 @@ export const metadata = {
 export default function PrivacyPage() {
   return (
     <main className="legal-page">
-      <Link className="legal-back" href="/new-ui">
-        ← Back
-      </Link>
+      <ReturnLink className="legal-back">← Back</ReturnLink>
 
       <div className="legal-content">
         <p className="kicker">Privacy Policy</p>

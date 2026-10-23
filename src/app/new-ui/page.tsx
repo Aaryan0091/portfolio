@@ -77,6 +77,49 @@ const techStack = [
     docs: "https://www.geeksforgeeks.org/postgresql/postgresql-tutorial/",
   },
 ];
+/**
+ * Insights & Thoughts cards: a short take on a technique behind one of the
+ * projects, linked to the official documentation it draws on. The image is
+ * that page's own share/preview image (hotlinked; a gradient shows if it
+ * ever fails to load).
+ */
+const insights = [
+  {
+    tag: "AI / NLP",
+    title: "Building SkillChain: turning GitHub activity into a skill score",
+    insight:
+      "Stars say a repo is popular, not what its author can do. GitHub's API reports how many bytes of each language a repository contains — weighting that by recent commits, and reading READMEs with NLP, gives a skill signal grounded in code someone actually wrote.",
+    source: {
+      name: "GitHub Docs",
+      url: "https://docs.github.com/en/rest/repos/repos#list-repository-languages",
+      image: "https://docs.github.com/assets/cb-345/images/social-cards/rest.png",
+    },
+  },
+  {
+    tag: "Realtime systems",
+    title: "Real-time sync in Soul-Voyage with Firebase and WebSockets",
+    insight:
+      "Firestore snapshot listeners push every change to every open session the moment it's written — no polling. Keeping fast, short-lived updates like live positions on WebSocket events, and only lasting state in Firestore, keeps the shared globe in sync without hammering the database.",
+    source: {
+      name: "Firebase Docs",
+      url: "https://firebase.google.com/docs/firestore/query-data/listen",
+      image: "https://firebase.google.com/images/social.png",
+    },
+  },
+  {
+    tag: "Full-stack",
+    title: "Semantic search for Work-Stack's bookmark platform",
+    insight:
+      "Keyword search fails the moment you forget a page's title. Storing an embedding for each bookmark in Postgres with pgvector lets you search by meaning — \"that article about caching APIs\" finds it even when none of those words appear in it.",
+    source: {
+      name: "Supabase Docs",
+      url: "https://supabase.com/docs/guides/ai/semantic-search",
+      image:
+        "https://obuldanrptloktxcffvn.supabase.co/functions/v1/og-images?site=docs&type=ai&title=Semantic%20search&description=Learn%20how%20to%20search%20by%20meaning%20rather%20than%20exact%20keywords.",
+    },
+  },
+];
+
 const featuredProjects = [
   {
     slug: "skillchain",
@@ -728,31 +771,33 @@ function NewUiBody() {
 
         <div className="new-ui-insights-body">
           <div className="new-ui-insights-grid">
-            {[
-              {
-                title:
-                  "Building SkillChain: turning GitHub activity into a skill score",
-                tag: "AI / NLP",
-              },
-              {
-                title:
-                  "Real-time sync in Soul-Voyage with Firebase and WebSockets",
-                tag: "Realtime systems",
-              },
-              {
-                title: "Semantic search for Work-Stack's bookmark platform",
-                tag: "Full-stack",
-              },
-            ].map((note) => (
-              <div
+            {insights.map((note) => (
+              <a
                 className="new-ui-insight-card"
+                href={note.source.url}
+                target="_blank"
+                rel="noreferrer"
                 data-view-cursor
                 key={note.title}
               >
                 <span className="new-ui-insight-glow" aria-hidden="true" />
+                {/* The source's own preview image, over a gradient that
+                    shows instead if the image ever fails to load. */}
+                <span
+                  className="new-ui-insight-image"
+                  aria-hidden="true"
+                  style={{
+                    backgroundImage: `url("${note.source.image}"), linear-gradient(135deg, rgba(125, 211, 252, 0.25), transparent)`,
+                  }}
+                />
                 <span className="new-ui-insight-tag">{note.tag}</span>
-                <p>{note.title}</p>
-              </div>
+                <span className="new-ui-insight-title">{note.title}</span>
+                <span className="new-ui-insight-text">{note.insight}</span>
+                <span className="new-ui-insight-source">
+                  {note.source.name} <span aria-hidden="true">↗</span>
+                  <span className="sr-only"> (opens in a new tab)</span>
+                </span>
+              </a>
             ))}
           </div>
         </div>

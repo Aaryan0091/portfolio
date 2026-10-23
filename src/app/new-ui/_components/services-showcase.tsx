@@ -103,6 +103,14 @@ export function ServicesShowcase() {
     )
       return;
 
+    // Move the cards as separate, bounded layers instead of promoting the
+    // entire (very wide) track to one layer during the pinned scroll.
+    const items = gsap.utils.toArray<HTMLElement>(
+      ".new-ui-service-item",
+      track
+    );
+    const movingElements = [...items, line];
+
     const mm = gsap.matchMedia();
 
     mm.add("(min-width: 901px) and (prefers-reduced-motion: no-preference)", () => {
@@ -138,7 +146,7 @@ export function ServicesShowcase() {
 
       /**
        * Rebuilds the zig-zag. Points are in stage coordinates at track x = 0
-       * (the SVG gets the same x as the track).
+       * (the SVG gets the same x as every card).
        *
        * The core is one corner per card: bottom-centre of each upper card,
        * top-centre of each lower card. That rhythm — same horizontal step,
@@ -158,14 +166,20 @@ export function ServicesShowcase() {
           ".new-ui-service-card",
           track
         );
-        if (cards.length < 2) return;
+        if (cards.length < 2 || cards.length !== items.length) return;
 
-        const corners: [number, number][] = cards.map((card, index) => [
-          track.offsetLeft + card.offsetLeft + card.offsetWidth / 2,
-          track.offsetTop +
-            card.offsetTop +
-            (index % 2 === 0 ? card.offsetHeight : 0),
-        ]);
+        // An item's own transform makes it the card's offset parent, so both
+        // offsets are needed to get back to the track's coordinate space.
+        const corners: [number, number][] = cards.map((card, index) => {
+          const item = items[index];
+          return [
+            track.offsetLeft + item.offsetLeft + card.offsetLeft + card.offsetWidth / 2,
+            track.offsetTop +
+              item.offsetTop +
+              card.offsetTop +
+              (index % 2 === 0 ? card.offsetHeight : 0),
+          ];
+        });
         const upperY = corners[0][1];
         const lowerY = corners[1][1];
         const step = corners[1][0] - corners[0][0];
@@ -248,16 +262,16 @@ export function ServicesShowcase() {
         { y: () => -headingExit(), ease: "none", duration: HEADING_EXIT_PX },
         0
       )
-        // The line rides along with the track so it stays threaded through
-        // the cards.
+        // Each card gets a small composited layer; the line follows them so
+        // it stays threaded through the same positions.
         .fromTo(
-          [track, line],
+          movingElements,
           { x: startX },
           { x: phaseAX, ease: "none", duration: HEADING_EXIT_PX },
           0
         )
         .fromTo(
-          [track, line],
+          movingElements,
           { x: phaseAX },
           {
             x: endX,
@@ -325,7 +339,7 @@ export function ServicesShowcase() {
         drawTl.kill();
         tl.scrollTrigger?.kill();
         tl.kill();
-        gsap.set([track, heading], { clearProps: "transform" });
+        gsap.set([...items, heading], { clearProps: "transform" });
         ScrollTrigger.removeEventListener("refresh", buildLine);
         gsap.set([line, lineFill, lineGlow], { clearProps: "all" });
         [lineFill, lineGlow].forEach((path) => {

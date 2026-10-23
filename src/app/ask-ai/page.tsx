@@ -1,7 +1,7 @@
-import Link from "next/link";
 import "@fontsource/lobster/latin-400.css";
 import { BackgroundLines } from "../new-ui/_components/background-lines";
 import { AiChat } from "./_components/ai-chat";
+import { ReturnLink } from "../new-ui/_components/return-link";
 
 export const metadata = {
   title: "Ask AI — Aaryan Gupta",
@@ -22,13 +22,11 @@ export default function AskAiPage() {
       </div>
 
       <header className="ask-ai-bar">
-        <Link className="nav-cta new-ui-back-cta" href="/new-ui">
-          ← Back to portfolio
-        </Link>
-        <Link className="ask-ai-brand" href="/new-ui" aria-label="Aaryan Gupta, back to portfolio">
+        <ReturnLink className="nav-cta new-ui-back-cta">← Back to portfolio</ReturnLink>
+        <ReturnLink className="ask-ai-brand" aria-label="Aaryan Gupta, back to portfolio">
           {/* eslint-disable-next-line @next/next/no-img-element -- tiny logo */}
           <img className="new-ui-logo" src="/logo-a.png" alt="" />
-        </Link>
+        </ReturnLink>
       </header>
 
       <AiChat />

@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, type ReactNode } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ScrollSmoother } from "gsap/ScrollSmoother";
+import { RETURN_FLAG } from "./return-link";
 
 /**
  * Wraps the page in the #smooth-wrapper / #smooth-content pair ScrollSmoother
@@ -31,14 +32,17 @@ if (typeof window !== "undefined") {
 }
 const isBackArrival = () => performance.now() - lastPopStateAt < 3000;
 
-/** Set by a project page's "← All projects" link (return-link.tsx): return
- * the visitor to where they left the portfolio, like Back does. */
-const RETURN_FLAG = "new-ui-return";
-const readReturnFlag = () => {
+/**
+ * Set by every "Back to portfolio" link on the other pages (ReturnLink in
+ * return-link.tsx): return the visitor to where they left the portfolio,
+ * like Back does. Its value is where to land if there's no saved spot — a
+ * section hash ("#featured-work") or "top". null when not returning.
+ */
+const readReturnFlag = (): string | null => {
   try {
-    return sessionStorage.getItem(RETURN_FLAG) === "1";
+    return sessionStorage.getItem(RETURN_FLAG);
   } catch {
-    return false;
+    return null;
   }
 };
 
@@ -50,7 +54,21 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
   // Before the first paint: coming back via Back, hide the content until it
   // has been put back where the visitor left it (removed in the effect below).
   useLayoutEffect(() => {
-    if (hasMountedInDocument && (isBackArrival() || readReturnFlag())) {
+    // Returning via a "Back to portfolio" link (flag set) — even when this
+    // is the first mount in the document, e.g. coming from the 404 page,
+    // which is a full page load — or via the browser's Back within the app.
+    const clientReturn =
+      readReturnFlag() !== null || (hasMountedInDocument && isBackArrival());
+    // A full page load from Back/Forward or a reload also restores the spot
+    // (see below), so it is hidden for that moment too.
+    const navigation = performance.getEntriesByType("navigation")[0] as
+      | PerformanceNavigationTiming
+      | undefined;
+    const reloadedHere =
+      !hasMountedInDocument &&
+      (navigation?.type === "reload" || navigation?.type === "back_forward") &&
+      new URL(navigation.name).pathname === window.location.pathname;
+    if (clientReturn || reloadedHere) {
       document.documentElement.classList.add(RESTORING_CLASS);
     }
   }, []);
@@ -244,7 +262,8 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     // document, AND when coming back here with Back from another page of
     // the site (e.g. a project page) — the visitor returns to exactly where
     // they left, not the top.
-    const returning = isClientArrival && readReturnFlag();
+    const returnFlag = isClientArrival ? readReturnFlag() : null;
+    const returning = returnFlag !== null;
     // Cleared once the spot has been restored (below), not here: in
     // development React runs this effect twice, and clearing it on the first
     // run left the second one thinking this was an ordinary arrival.
@@ -406,19 +425,26 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
         holdAt(savedPosition);
         clearReturnFlag();
         return; // holdAt reveals the page itself, once it's settled.
-      } else if (window.location.hash || returning) {
-        // Arriving with a section in the URL — or via "← All projects" from
-        // a project page opened directly, so there's no saved spot (that
-        // lands on Featured Work): go to that section. The browser can't do
-        // it itself — the smoother owns the scrolling.
+      } else if (
+        window.location.hash ||
+        (returning && returnFlag?.startsWith("#"))
+      ) {
+        // Arriving with a section in the URL — or returning via a "Back to
+        // portfolio" link with no saved spot, whose fallback is a section
+        // (e.g. "← All projects" → Featured Work): go to that section. The
+        // browser can't do it itself — the smoother owns the scrolling.
         const smoother = ScrollSmoother.get();
         const target = document.querySelector(
-          window.location.hash || "#featured-work"
+          window.location.hash || returnFlag || ""
         );
         if (smoother && target) {
           smoother.scrollTo(target, false, `top ${navHeightPx()}px`);
           ScrollTrigger.update();
         }
+      } else if (returning) {
+        // Returning with no saved spot and no section to go to: the top.
+        scrollToTop();
+        ScrollTrigger.update();
       }
       clearReturnFlag();
       // Show the page once it's in place (next frame, so the jump has been

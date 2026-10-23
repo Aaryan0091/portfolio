@@ -4381,7 +4381,6 @@ footer {
   max-width: none;
   margin: 0;
   padding-inline: var(--svc-edge);
-  will-change: transform;
 }
 
 /* Beats the staggered nth-child offsets used by the vertical layout
@@ -4389,6 +4388,7 @@ footer {
 .new-ui-services.is-showcase .new-ui-service-item {
   height: var(--svc-band);
   margin: 0;
+  will-change: transform;
 }
 
 /* Each following card tucks back under the one to its left. */
@@ -4474,6 +4474,8 @@ footer {
 /* Blurred copy under the fill: the glow. Its opacity rises as the line
    draws (services-showcase.tsx). */
 .new-ui-services-line .new-ui-services-line-glow {
+  /* Temporary Safari A/B test: hide only the filtered copy, not the sharp line. */
+  display: none;
   stroke: var(--new-ui-accent);
   stroke-width: 7;
   opacity: 0;
@@ -5230,11 +5232,12 @@ html:has(.new-ui-root)::-webkit-scrollbar {
   overflow: hidden;
   /* Tall, poster-like cards. */
   min-height: clamp(360px, 48svh, 440px);
-  padding: 1.75rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 2rem;
+  gap: 0.85rem;
+  color: inherit;
+  text-decoration: none;
   border: 1px solid rgba(244, 250, 247, 0.14);
   border-radius: 1.25rem;
   background: linear-gradient(165deg, rgba(var(--new-ui-accent-rgb), 0.22), rgba(var(--dark-surface-rgb), 0.85));
@@ -5260,13 +5263,50 @@ html:has(.new-ui-root)::-webkit-scrollbar {
   color: var(--new-ui-accent);
 }
 
-.new-ui-insight-card p {
+/* The source page's preview image, framed like a thumbnail at the top. The
+   gradient behind it shows if the image can't load. */
+.new-ui-insight-image {
+  position: relative;
+  display: block;
+  aspect-ratio: 1200 / 630;
+  margin-bottom: 0.4rem;
+  border: 1px solid rgba(244, 250, 247, 0.1);
+  border-radius: 0.85rem;
+  background-color: #0b2428;
+  background-image: linear-gradient(135deg, rgba(var(--new-ui-accent-rgb), 0.25), transparent);
+  background-position: center;
+  background-size: cover;
+  transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.new-ui-insight-card:hover .new-ui-insight-image {
+  transform: scale(1.02);
+}
+
+.new-ui-insight-title {
   position: relative;
   color: #f4faf7;
   font-family: var(--font-display);
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   font-weight: 700;
   line-height: 1.35;
+}
+
+.new-ui-insight-text {
+  position: relative;
+  color: rgba(244, 250, 247, 0.72);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+/* "GitHub Docs ↗" — pinned to the bottom of the card. */
+.new-ui-insight-source {
+  position: relative;
+  margin-top: auto;
+  padding-top: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--new-ui-accent);
 }
 
 @media (max-width: 900px) {
@@ -7163,4 +7203,225 @@ html.new-ui-loaded .new-ui-loader {
    where the visitor left it instead of showing the top and gliding down. */
 html.new-ui-restoring #smooth-content {
   visibility: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+   Legal pages (/terms) — New UI look: glowing-lines backdrop, Lobster title,
+   a sticky table of contents beside numbered, readable sections.
+--------------------------------------------------------------------------- */
+.legal-v2 {
+  --new-ui-accent: #7dd3fc;
+  --new-ui-accent-strong: #38bdf8;
+  --new-ui-accent-rgb: 125, 211, 252;
+  --new-ui-accent-ink: #062a3a;
+
+  display: flow-root;
+  padding: 0 clamp(1.25rem, 5vw, 3rem) 6rem;
+}
+
+.legal-v2 > :not(.new-ui-backdrop) {
+  position: relative;
+  z-index: 1;
+}
+
+.legal-hero {
+  max-width: 760px;
+  margin: clamp(3rem, 8vh, 5rem) auto clamp(2.5rem, 6vh, 4rem);
+  text-align: center;
+  animation: ask-ai-rise 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.legal-eyebrow {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--new-ui-accent);
+}
+
+.legal-title {
+  margin: 0;
+  font-family: "Lobster", cursive;
+  font-size: clamp(3rem, 8vw, 5.5rem);
+  font-weight: 400;
+  line-height: 1.05;
+  color: #f4faf7;
+  text-shadow: 0 0 40px rgba(var(--new-ui-accent-rgb), 0.35);
+}
+
+.legal-meta {
+  margin: 1rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: rgba(244, 250, 247, 0.55);
+}
+
+/* The plain-English summary, in a glowing glass panel. */
+.legal-summary {
+  margin: 1.75rem auto 0;
+  padding: 1.1rem 1.4rem;
+  border: 1px solid rgba(var(--new-ui-accent-rgb), 0.25);
+  border-radius: 1rem;
+  background: rgba(var(--new-ui-accent-rgb), 0.06);
+  color: rgba(244, 250, 247, 0.85);
+  font-size: 1.02rem;
+  line-height: 1.65;
+  text-align: left;
+}
+
+.legal-layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: clamp(2rem, 5vw, 4rem);
+  max-width: 1080px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+.legal-toc {
+  /* The old site styles every <nav> as a flex row (and underlines its
+     links) — this one is a plain block list. */
+  display: block;
+  position: sticky;
+  top: 2rem;
+  padding: 1.25rem;
+  border: 1px solid rgba(244, 250, 247, 0.1);
+  border-radius: 1rem;
+  background: rgba(var(--dark-surface-rgb), 0.55);
+  backdrop-filter: blur(10px);
+}
+
+.legal-toc p {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(244, 250, 247, 0.55);
+}
+
+.legal-toc ol {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: toc;
+}
+
+.legal-toc li {
+  counter-increment: toc;
+}
+
+.legal-toc a {
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.3rem 0.4rem;
+  border-radius: 0.4rem;
+  color: rgba(244, 250, 247, 0.72);
+  font-size: 0.86rem;
+  line-height: 1.35;
+  text-decoration: none;
+  transition: color 180ms ease, background-color 180ms ease;
+}
+
+.legal-toc a::before {
+  content: counter(toc, decimal-leading-zero);
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1.6;
+  color: var(--new-ui-accent);
+}
+
+.legal-toc a::after {
+  display: none;
+}
+
+.legal-toc a:hover {
+  color: #f4faf7;
+  background: rgba(var(--new-ui-accent-rgb), 0.08);
+}
+
+.legal-body {
+  counter-reset: legal;
+}
+
+.legal-body section {
+  counter-increment: legal;
+  padding: 1.75rem 0;
+  border-top: 1px solid rgba(244, 250, 247, 0.08);
+  scroll-margin-top: 1.5rem;
+}
+
+.legal-body section:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.legal-body h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin: 0 0 0.9rem;
+  font-size: clamp(1.3rem, 2.2vw, 1.6rem);
+  font-weight: 800;
+  color: #f4faf7;
+}
+
+.legal-body h2::before {
+  content: counter(legal, decimal-leading-zero);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--new-ui-accent);
+}
+
+.legal-body p,
+.legal-body li {
+  color: rgba(244, 250, 247, 0.75);
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.legal-body p {
+  margin: 0 0 0.85rem;
+}
+
+.legal-body ul {
+  margin: 0 0 0.85rem;
+  padding-left: 1.25rem;
+}
+
+.legal-body li::marker {
+  color: var(--new-ui-accent);
+}
+
+.legal-body a {
+  color: var(--new-ui-accent);
+  text-decoration: underline;
+  text-decoration-color: rgba(var(--new-ui-accent-rgb), 0.4);
+  text-underline-offset: 3px;
+}
+
+.legal-body a:hover {
+  text-decoration-color: currentColor;
+}
+
+@media (max-width: 860px) {
+  .legal-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .legal-toc {
+    position: static;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .legal-hero {
+    animation: none;
+  }
 }

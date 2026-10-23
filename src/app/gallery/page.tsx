@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { InteractiveGallery } from "./_components/interactive-gallery";
+import { ReturnLink } from "../new-ui/_components/return-link";
 
 export const metadata = {
   title: "Gallery — Aaryan Gupta",
@@ -18,9 +18,7 @@ export default function GalleryPage() {
       <InteractiveGallery images={galleryImages} />
 
       <header className="gallery-overlay gallery-overlay-top">
-        <Link className="gallery-back" href="/new-ui">
-          ← Back to portfolio
-        </Link>
+        <ReturnLink className="gallery-back">← Back to portfolio</ReturnLink>
         <p className="gallery-hint">Drag or scroll in any direction</p>
       </header>
 

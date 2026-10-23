@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { Suspense } from "react";
 import { InfiniteSlider } from "@/components/ui/infinite-slider";
 import { AboutAssistant } from "./_components/about-assistant";
 import { LeetCodeActivity, LeetCodeActivitySkeleton } from "./_components/leetcode-activity";
 import { TextReveal } from "./_components/text-reveal";
 import { ThemeToggle } from "./_components/theme-toggle";
+import { ReturnLink } from "./new-ui/_components/return-link";
 
 const projects = [
   {
@@ -256,9 +256,7 @@ export default function Home() {
 
           <div className="nav-actions">
             <ThemeToggle />
-            <Link className="new-ui-toggle" href="/new-ui">
-              New UI
-            </Link>
+            <ReturnLink className="new-ui-toggle">New UI</ReturnLink>
             <a className="nav-cta" href="#page-end">
               Let&apos;s talk <ArrowIcon />
             </a>
