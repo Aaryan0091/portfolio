@@ -4003,7 +4003,14 @@ footer {
      section's higher z-index and opaque background, it painted straight over
      the "Services I Offer" heading. */
   display: flow-root;
-  background: var(--dark-surface);
+  /* Let the page-wide guide lines disappear over the heading's entrance
+     instead of being cut off at this section's top edge. */
+  background: linear-gradient(
+    to bottom,
+    rgba(var(--dark-surface-rgb), 0.7),
+    rgba(var(--dark-surface-rgb), 0.96) clamp(3rem, 9svh, 5.25rem),
+    var(--dark-surface) clamp(6rem, 15svh, 9rem)
+  );
   padding: var(--new-ui-section-top) clamp(1.5rem, 6vw, 5rem) 6rem;
 }
 
@@ -4288,7 +4295,12 @@ footer {
 .new-ui-services {
   position: relative;
   z-index: 1;
-  background: var(--dark-surface);
+  background: linear-gradient(
+    to bottom,
+    rgba(var(--dark-surface-rgb), 0.7),
+    rgba(var(--dark-surface-rgb), 0.96) clamp(3rem, 9svh, 5.25rem),
+    var(--dark-surface) clamp(6rem, 15svh, 9rem)
+  );
   padding: var(--new-ui-section-top) clamp(1.5rem, 6vw, 5rem) 8rem;
 }
 
@@ -4312,6 +4324,40 @@ footer {
    track in the band BELOW the heading and are slid across from the right
    while the stage is pinned, so they never rise into the heading.
 --------------------------------------------------------------------------- */
+/* Start dimming the long light streaks before the section boundary. This
+   joins the section's 70% cover seamlessly, including while it is pinned. */
+.new-ui-awards::before,
+.new-ui-services::before,
+.pin-spacer:has(> .new-ui-services.is-showcase)::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 100%;
+  height: clamp(5rem, 12svh, 8rem);
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, rgba(var(--dark-surface-rgb), 0.7));
+}
+
+/* Feather the lower edge of Services into the exposed guide lines. Use the
+   pin spacer on desktop because the moving cards need the stage clipped. */
+.new-ui-services:not(.is-showcase)::after,
+.pin-spacer:has(> .new-ui-services.is-showcase)::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  height: clamp(6rem, 16svh, 10rem);
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    var(--dark-surface),
+    rgba(var(--dark-surface-rgb), 0.8) 25%,
+    rgba(var(--dark-surface-rgb), 0.3) 65%,
+    transparent
+  );
+}
+
 .new-ui-services.is-showcase {
   /* Heading line-height is 1.5, so half its box is 0.75 × its font size. */
   --svc-heading-half: calc(0.75 * var(--new-ui-heading-size));
@@ -5134,7 +5180,7 @@ html:has(.new-ui-root)::-webkit-scrollbar {
 }
 
 .new-ui-progress-bar::before {
-  /* Faint track, shown on hover so the full length reads as draggable. */
+  /* Only reveal the full track during interaction. */
   content: "";
   position: absolute;
   top: 0;
@@ -5149,11 +5195,10 @@ html:has(.new-ui-root)::-webkit-scrollbar {
 .new-ui-progress-bar span {
   position: relative;
   display: block;
+  width: 0;
   height: 2px;
-  background: linear-gradient(90deg, rgba(var(--new-ui-accent-rgb), 0.35), var(--new-ui-accent), #e6fbff);
+  background: linear-gradient(90deg, var(--new-ui-accent), #e6fbff);
   box-shadow: 0 0 10px rgba(var(--new-ui-accent-rgb), 0.8);
-  transform: scaleX(0);
-  transform-origin: left center;
   transition: height 200ms ease;
 }
 
@@ -6112,6 +6157,15 @@ html:has(.new-ui-root)::-webkit-scrollbar {
   z-index: 1;
 }
 
+.ask-ai-v2 > .new-ui-backdrop {
+  transition: opacity 600ms ease;
+}
+
+/* Keep a faint trace of the ambient lights once the conversation begins. */
+.ask-ai-v2:has(.ask-ai-stage.is-chatting) > .new-ui-backdrop {
+  opacity: 0.12;
+}
+
 .ask-ai-bar {
   display: flex;
   flex: none;
@@ -6242,6 +6296,8 @@ html:has(.new-ui-root)::-webkit-scrollbar {
 
 .ask-ai-stage.is-chatting .ask-ai-photo-glow {
   width: 110px;
+  animation: none;
+  opacity: 0.15;
 }
 
 .ask-ai-stage.is-chatting .ask-ai-greeting {
@@ -6263,9 +6319,11 @@ html:has(.new-ui-root)::-webkit-scrollbar {
   margin-bottom: 1rem;
   padding: 0.25rem 0.25rem 0.5rem;
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(var(--new-ui-accent-rgb), 0.3) transparent;
-  mask-image: linear-gradient(to bottom, transparent, #000 1.25rem);
+  scrollbar-width: none;
+}
+
+.ask-ai-log::-webkit-scrollbar {
+  display: none;
 }
 
 .ask-ai-row {
@@ -6293,6 +6351,51 @@ html:has(.new-ui-root)::-webkit-scrollbar {
   color: var(--new-ui-accent);
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+.ask-ai-bubble {
+  overflow-wrap: anywhere;
+}
+
+.ask-ai-bubble-user {
+  white-space: pre-wrap;
+}
+
+.ask-ai-bubble-assistant > * + * {
+  margin-top: 0.85rem;
+}
+
+.ask-ai-bubble-assistant ul,
+.ask-ai-bubble-assistant ol {
+  padding-left: 1.3rem;
+}
+
+.ask-ai-bubble-assistant ul {
+  list-style: disc;
+}
+
+.ask-ai-bubble-assistant ol {
+  list-style: decimal;
+}
+
+.ask-ai-bubble-assistant li + li {
+  margin-top: 0.8rem;
+}
+
+.ask-ai-bubble-assistant li > p + p {
+  margin-top: 0.4rem;
+}
+
+.ask-ai-bubble-assistant strong {
+  color: #f4faf7;
+  font-weight: 650;
+}
+
+.ask-ai-bubble-assistant pre {
+  overflow-x: auto;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .ask-ai-bubble-assistant {
@@ -6544,6 +6647,10 @@ html:has(.new-ui-root)::-webkit-scrollbar {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .ask-ai-v2 > .new-ui-backdrop {
+    transition: none;
+  }
+
   .ask-ai-hero,
   .ask-ai-photo,
   .ask-ai-photo-glow,

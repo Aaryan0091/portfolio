@@ -40,7 +40,9 @@ export function PortfolioProgress() {
     const render = () => {
       const max = ScrollTrigger.maxScroll(window);
       const progress = gsap.utils.clamp(0, 1, max > 0 ? window.scrollY / max : 0);
-      bar.style.transform = `scaleX(${progress})`;
+      // Grow the actual bar rather than scaling a full-width layer: scaling
+      // also compresses its glow and can soften the short starting segment.
+      bar.style.width = `${progress * 100}%`;
       track.setAttribute("aria-valuenow", String(Math.round(progress * 100)));
     };
 

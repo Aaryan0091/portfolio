@@ -14,7 +14,7 @@ const suggestedTopics: Array<{
   { label: "Skills", question: "What is his tech stack?", icon: "skills" },
   { label: "DSA", question: "Tell me about his LeetCode practice.", icon: "dsa" },
   { label: "Contact", question: "How can I contact Aaryan?", icon: "contact" },
-  { label: "Résumé", question: "Where can I find Aaryan's resume?", icon: "resume" },
+  { label: "Resume", question: "Where can I find Aaryan's resume?", icon: "resume" },
 ];
 
 const rotatingPrompts = [

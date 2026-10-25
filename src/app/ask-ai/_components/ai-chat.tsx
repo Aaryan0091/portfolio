@@ -1,11 +1,14 @@
 "use client";
 
 import Image from "next/image";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 
 type Message = {
   role: "user" | "assistant";
   text: string;
+  isError?: boolean;
 };
 
 /** The photo in the middle of the page. Swap the file to change it. */
@@ -21,9 +24,6 @@ const topics: Array<{ label: string; question: string; icon: TopicIcon }> = [
   { label: "Location", question: "Where is Aaryan based?", icon: "location" },
   { label: "Resume", question: "Where can I find Aaryan's resume?", icon: "resume" },
 ];
-
-/** How long the assistant "types" before its answer appears. */
-const REPLY_DELAY_MS = 650;
 
 /** Example questions the input's placeholder types out, erases, and cycles. */
 const placeholderPrompts = [
@@ -87,90 +87,6 @@ function useTypedPlaceholder() {
   return text;
 }
 
-function answerQuestion(question: string) {
-  const normalized = question.toLowerCase();
-
-  if (/where.*(based|live|from)|location|city|country/.test(normalized)) {
-    return "Aaryan is based in Faridabad, Haryana, India, and works with people remotely anywhere.";
-  }
-
-  if (/service|offer|hire for|help with/.test(normalized)) {
-    return "Aaryan offers web app development, frontend engineering, backend development, AI feature integration, blockchain development, deployment & DevOps, and database management.";
-  }
-
-  if (/resume|résumé|cv/.test(normalized)) {
-    return "You can download Aaryan's résumé here: /Aaryan_Gupta_Resume.pdf";
-  }
-
-  if (/project|built|build|work|portfolio/.test(normalized)) {
-    return "Aaryan has shipped seven projects: SkillChain, Work-Stack, Soul-Voyage, BlinkFlow, CSM Order Tracker, MatchMyResume, and Focus Tide — spanning AI/NLP, blockchain verification, browser tooling, desktop apps, real-time systems, and productivity tools. Each has a case study under Featured Work on the portfolio.";
-  }
-
-  if (/stack|skill|technology|technologies|tool/.test(normalized)) {
-    return "His core stack is TypeScript, React, Next.js, Node.js, Python, and PostgreSQL, alongside Express, MongoDB, Supabase, Firebase, and NLP/ML tooling.";
-  }
-
-  if (/strength|good at|special|focus/.test(normalized)) {
-    return "His strength is connecting the full product: thoughtful interfaces, reliable APIs and data, authentication, real-time features, and useful AI capabilities.";
-  }
-
-  if (/education|college|university|student|degree/.test(normalized)) {
-    return "Aaryan is pursuing a B.Tech in Computer Science (AI & ML) at Manipal University Jaipur, from 2023 to the present.";
-  }
-
-  if (/leetcode|problem|dsa|algorithm/.test(normalized)) {
-    return "He practices data structures and algorithms consistently on LeetCode, with his solved totals and activity on the main portfolio.";
-  }
-
-  if (/contact|email|reach|hire|connect/.test(normalized)) {
-    return "Use the \"Got an Idea?\" form at the bottom of the portfolio, or email aaryangupta2005@gmail.com. He's also on GitHub and LinkedIn.";
-  }
-
-  if (/ai|machine learning|ml|nlp/.test(normalized)) {
-    return "Aaryan works with machine learning, deep learning, NLP, TensorFlow, scikit-learn, spaCy, and NLTK, applying them to practical product workflows like SkillChain.";
-  }
-
-  if (/hackathon|award|experience|credential/.test(normalized)) {
-    return "He participated in the internal round of Smart India Hackathon 2024 at Manipal University Jaipur, and holds certifications from NPTEL/IIT Madras, Oracle Academy, Red Hat Academy, and Cisco + CodeChef.";
-  }
-
-  if (/about|who|yourself|aaryan/.test(normalized)) {
-    return "Aaryan Gupta is a full-stack engineer focused on AI/NLP. He builds products end to end — from interfaces and APIs to databases, deployment, and AI features — and is studying Computer Science (AI & ML) at Manipal University Jaipur.";
-  }
-
-  return "I can best answer questions about Aaryan's projects, skills, services, education, LeetCode practice, awards, location, or how to contact him.";
-}
-
-/**
- * Turns links in an answer into real links: full URLs, and this site's own
- * paths (project pages, the résumé, the contact form). Site pages open in
- * the same tab; everything else in a new one.
- */
-const LINK_PATTERN =
-  /(https?:\/\/[^\s)]+|\/(?:new-ui[^\s),]*|Aaryan_Gupta_Resume\.pdf))/g;
-
-function renderText(text: string): ReactNode {
-  const parts = text.split(LINK_PATTERN);
-  if (parts.length === 1) return text;
-  return parts.map((part, index) => {
-    if (index % 2 === 0) return part;
-    // A sentence's full stop is not part of the link.
-    const href = part.replace(/[.,;:!?]+$/, "");
-    const trailing = part.slice(href.length);
-    const internal = href.startsWith("/new-ui");
-    return (
-      <span key={index}>
-        <a
-          href={href}
-          {...(internal ? {} : { target: "_blank", rel: "noreferrer" })}
-        >
-          {href.replace(/^https?:\/\//, "")}
-        </a>
-        {trailing}
-      </span>
-    );
-  });
-}
 
 function TopicGlyph({ icon }: { icon: TopicIcon }) {
   const paths: Record<TopicIcon, ReactNode> = {
@@ -226,7 +142,6 @@ export function AiChat() {
   const [question, setQuestion] = useState("");
   const [typing, setTyping] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
-  const replyTimer = useRef<number>(0);
   const chatting = messages.length > 0;
 
   // Keep the newest message in view.
@@ -235,13 +150,11 @@ export function AiChat() {
     if (log) log.scrollTo({ top: log.scrollHeight, behavior: "smooth" });
   }, [messages, typing]);
 
-  useEffect(() => () => window.clearTimeout(replyTimer.current), []);
   const typedPlaceholder = useTypedPlaceholder();
 
   /**
-   * Asks the real assistant (/api/ask, Claude) with the conversation so far.
-   * If AI isn't set up (no API key) or the request fails outright, falls
-   * back to the built-in canned answers so the page still works.
+   * Ask the model with conversation history. Failures are shown explicitly,
+   * never replaced with scripted biographical answers.
    */
   const ask = async (nextQuestion: string) => {
     const trimmed = nextQuestion.trim();
@@ -252,22 +165,16 @@ export function AiChat() {
     setQuestion("");
     setTyping(true);
 
-    const reply = (text: string) => {
-      setMessages((current) => [...current, { role: "assistant", text }]);
+    const reply = (text: string, isError = false) => {
+      setMessages((current) => [...current, { role: "assistant", text, isError }]);
       setTyping(false);
-    };
-    const fallback = () => {
-      replyTimer.current = window.setTimeout(
-        () => reply(answerQuestion(trimmed)),
-        REPLY_DELAY_MS
-      );
     };
 
     try {
       const response = await fetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: conversation }),
+        body: JSON.stringify({ messages: conversation.filter((message) => !message.isError) }),
       });
       const data = (await response.json().catch(() => ({}))) as {
         answer?: string;
@@ -275,13 +182,16 @@ export function AiChat() {
       };
       if (response.ok && data.answer) {
         reply(data.answer);
-      } else if (response.status === 503 || !data.error) {
-        fallback();
       } else {
-        reply(data.error);
+        reply(
+          response.status === 429 && data.error
+            ? data.error
+            : "The AI is unavailable right now. Please try your question again in a moment.",
+          true
+        );
       }
     } catch {
-      fallback();
+      reply("Couldn't reach the AI. Please check your connection and try again.", true);
     }
   };
 
@@ -320,7 +230,28 @@ export function AiChat() {
           {messages.map((message, index) => (
             <div className={`ask-ai-row ask-ai-row-${message.role}`} key={index}>
               <div className={`ask-ai-bubble ask-ai-bubble-${message.role}`}>
-                {renderText(message.text)}
+                {message.isError && <strong>Unable to answer</strong>}
+                {message.role === "assistant" ? (
+                  <Markdown
+                    remarkPlugins={[remarkGfm]}
+                    skipHtml
+                    components={{
+                      img: () => null,
+                      a: ({ href, children }) => (
+                        <a
+                          href={href}
+                          {...(/^https?:\/\//i.test(href ?? "") || href?.endsWith(".pdf")
+                            ? { target: "_blank", rel: "noopener noreferrer" }
+                            : {})}
+                        >
+                          {children}
+                        </a>
+                      ),
+                    }}
+                  >
+                    {message.text}
+                  </Markdown>
+                ) : message.text}
               </div>
             </div>
           ))}

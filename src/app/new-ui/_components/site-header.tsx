@@ -70,7 +70,7 @@ export function NewUiHeader() {
           <a href="#top">Home</a>
           <a href="#services">Services</a>
           <a href="/Aaryan_Gupta_Resume.pdf" target="_blank" rel="noreferrer">
-            Résumé
+            Resume
           </a>
           <Link className="ask-ai-nav-link" href="/ask-ai">
             Ask AI
@@ -85,9 +85,6 @@ export function NewUiHeader() {
         </a>
 
         <div className="nav-actions">
-          <Link className="nav-cta new-ui-back-cta" href="/">
-            Old UI
-          </Link>
           <a className="nav-cta new-ui-cta" href="#contact">
             Get Started
           </a>

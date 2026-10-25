@@ -161,7 +161,7 @@ export default function TermsPage() {
               so don&apos;t include personal or confidential information in
               them. Usage is limited per visitor to keep the service fair, and
               when the limit is reached or the AI is unavailable, the page
-              falls back to simpler built-in answers.
+              shows an availability notice and asks you to try again.
             </p>
           </section>
 
@@ -251,7 +251,7 @@ export default function TermsPage() {
             <p>
               Questions about these terms? Email{" "}
               <a href={`mailto:${EMAIL}`}>{EMAIL}</a> or use the{" "}
-              <Link href="/new-ui#contact">contact form</Link>.
+              <Link href="/#contact">contact form</Link>.
             </p>
           </section>
         </article>

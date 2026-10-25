@@ -35,7 +35,7 @@ export function ReturnLink({
       className={className}
       // No #hash in the URL: Next.js would scroll to it after arriving and
       // override the restored spot. The fallback travels in the flag instead.
-      href="/new-ui"
+      href="/"
       // Next.js otherwise scrolls to the top after arriving.
       scroll={false}
       onClick={() => {
