@@ -541,9 +541,6 @@ function NewUiBody() {
                 sizes="(max-width: 900px) 90vw, 540px"
               />
             </div>
-            <a className="new-ui-primary" href="#contact">
-              Hire Me
-            </a>
           </div>
         </div>
       </section>
@@ -619,26 +616,19 @@ function NewUiBody() {
         {/* Zig-zag progress line through the cards — showcase mode only. */}
         <svg className="new-ui-services-line" aria-hidden="true">
           <defs>
-            {/* Soft glow for the line: a blurred copy drawn underneath. */}
-            <filter
-              id="new-ui-services-line-blur"
-              x="-5%"
-              y="-50%"
-              width="110%"
-              height="200%"
-            >
-              <feGaussianBlur stdDeviation="4" />
-            </filter>
+            <clipPath id="new-ui-services-glow-reveal" clipPathUnits="userSpaceOnUse">
+              <rect className="new-ui-services-glow-clip" />
+            </clipPath>
           </defs>
           <path className="new-ui-services-line-base" />
-          {/* pathLength="1" lets the draw-on animate 1 → 0 whatever the
-              zig-zag's real length is on this screen. */}
-          <path
-            className="new-ui-services-line-glow"
-            pathLength={1}
-            filter="url(#new-ui-services-line-blur)"
-          />
-          <path className="new-ui-services-line-fill" pathLength={1} />
+          {/* One reveal edge keeps the sharp stroke and halo in sync. */}
+          <g clipPath="url(#new-ui-services-glow-reveal)">
+            <image
+              className="new-ui-services-line-glow"
+              preserveAspectRatio="none"
+            />
+            <path className="new-ui-services-line-fill" />
+          </g>
         </svg>
       </section>
 

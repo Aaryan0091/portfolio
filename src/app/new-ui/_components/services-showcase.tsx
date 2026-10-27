@@ -64,10 +64,6 @@ const LINE_FADE_PX = 150;
  */
 const LINE_DRAW_SMOOTHING = 0.6;
 
-/** Opacity of the line's soft glow at the start and end of the run. */
-const LINE_GLOW_START = 0.15;
-const LINE_GLOW_END = 0.9;
-
 export function ServicesShowcase() {
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -88,9 +84,10 @@ export function ServicesShowcase() {
     const lineFill = document.querySelector<SVGPathElement>(
       ".new-ui-services-line-fill"
     );
-    const lineGlow = document.querySelector<SVGPathElement>(
+    const lineGlow = document.querySelector<SVGImageElement>(
       ".new-ui-services-line-glow"
     );
+    const glowClip = document.querySelector<SVGRectElement>(".new-ui-services-glow-clip");
 
     if (
       !section ||
@@ -99,7 +96,8 @@ export function ServicesShowcase() {
       !line ||
       !lineBase ||
       !lineFill ||
-      !lineGlow
+      !lineGlow ||
+      !glowClip
     )
       return;
 
@@ -113,12 +111,12 @@ export function ServicesShowcase() {
 
     const mm = gsap.matchMedia();
 
-    mm.add("(min-width: 901px) and (prefers-reduced-motion: no-preference)", () => {
+    mm.add("(min-width: 901px) and (min-height: 700px) and (prefers-reduced-motion: no-preference)", () => {
       section.classList.add("is-showcase");
 
       // --- geometry, re-evaluated on every refresh --------------------------
-      // offsetTop/scrollWidth ignore transforms, so the animation's own
-      // movement can never feed back into these numbers.
+      // Layout offsets and offsetWidth ignore transforms. scrollWidth can
+      // include the translated children's overflow and inflate the endpoint.
 
       const padLeft = () => parseFloat(getComputedStyle(track).paddingLeft) || 0;
 
@@ -139,7 +137,7 @@ export function ServicesShowcase() {
         Math.max(0, window.innerWidth - headingTextRight() - CLEARANCE_PX);
 
       /** End: the last card's right edge sits on the right margin. */
-      const endX = () => Math.min(0, window.innerWidth - track.scrollWidth);
+      const endX = () => Math.min(0, window.innerWidth - track.offsetWidth);
 
       /** How far the heading climbs to be fully off the top of the stage. */
       const headingExit = () => heading.offsetTop + heading.offsetHeight;
@@ -161,6 +159,9 @@ export function ServicesShowcase() {
        * Every segment stays in the middle strip between the bands, so the
        * line only ever meets a card at the card's inner edge.
        */
+      let glowWidth = 0;
+      let glowImageKey = "";
+      const glowReveal = { progress: 0 };
       const buildLine = () => {
         const cards = gsap.utils.toArray<HTMLElement>(
           ".new-ui-service-card",
@@ -184,7 +185,9 @@ export function ServicesShowcase() {
         const lowerY = corners[1][1];
         const step = corners[1][0] - corners[0][0];
         const leftEdge = -phaseAX();
-        const rightEdge = window.innerWidth - endX();
+        // Stop after the final card's short outgoing segment, at the track's
+        // layout edge. Never extend into overflow created by the animation.
+        const rightEdge = track.offsetLeft + track.offsetWidth;
 
         /** Extends the pattern from `from` in `direction` until `edge`. */
         const extend = (
@@ -220,14 +223,50 @@ export function ServicesShowcase() {
           .join(" ");
         lineBase.setAttribute("d", d);
         lineFill.setAttribute("d", d);
-        lineGlow.setAttribute("d", d);
+        // Rasterize only during geometry refresh, never during scrolling.
+        // Safari can now composite a bitmap rather than an SVG blur filter.
+        const padding = 24;
+        const minX = points[0][0] - padding;
+        const minY = Math.min(...points.map((point) => point[1])) - padding;
+        glowWidth = points[points.length - 1][0] - minX + padding;
+        const glowHeight = Math.max(...points.map((point) => point[1])) - minY + padding;
+        const color = getComputedStyle(lineFill).stroke;
+        // The halo is intentionally soft; cap resolution and texture width.
+        const scale = Math.min(window.devicePixelRatio || 1, 1.5, 8192 / glowWidth);
+        const imageKey = `${d}|${glowWidth}|${glowHeight}|${color}|${scale}`;
+        if (imageKey !== glowImageKey) {
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.ceil(glowWidth * scale);
+          canvas.height = Math.ceil(glowHeight * scale);
+          const context = canvas.getContext("2d");
+          if (context) {
+            context.scale(scale, scale);
+            context.translate(-minX, -minY);
+            context.strokeStyle = color;
+            context.lineJoin = "round";
+            // Layered translucent strokes bake a soft halo without any live filter.
+            const path = new Path2D(d);
+            for (let width = 23; width >= 5; width -= 2) {
+              context.lineWidth = width;
+              context.globalAlpha = 0.045;
+              context.stroke(path);
+            }
+            lineGlow.setAttribute("href", canvas.toDataURL("image/png"));
+            glowImageKey = imageKey;
+          }
+        }
+        for (const element of [lineGlow, glowClip]) {
+          element.setAttribute("x", String(minX));
+          element.setAttribute("y", String(minY));
+          element.setAttribute("height", String(glowHeight));
+        }
+        lineGlow.setAttribute("width", String(glowWidth));
+        glowClip.setAttribute("width", String(glowWidth * glowReveal.progress));
       };
 
       // Redrawn AFTER each refresh: during refreshInit the pinned stage still
       // has the old viewport's height, which put the lower cards' corners in
-      // the wrong place after a resize. The draw-on below uses pathLength="1"
-      // (see page.tsx), so it never depends on the path's real length and
-      // redrawing late is harmless.
+      // the wrong place after a resize. The shared reveal uses the new width.
       buildLine();
       ScrollTrigger.addEventListener("refresh", buildLine);
 
@@ -314,25 +353,14 @@ export function ServicesShowcase() {
         defaults: { ease: "none", duration: 1 },
       });
 
-      // Via attributes, not CSS: GSAP rounds CSS px values to whole pixels,
-      // which on a pathLength of 1 turned the draw-on into a jump from hidden
-      // to fully drawn.
+      // One clip reveals both layers; no independently animated dash can
+      // outrun the halo, and the sharp stroke geometry stays static.
       drawTl
-        .fromTo(
-          [lineFill, lineGlow],
-          { attr: { "stroke-dasharray": 1, "stroke-dashoffset": 1 } },
-          { attr: { "stroke-dashoffset": 0 } },
-          0
-        )
-        // The glow is a blurred copy of the line whose opacity rises, instead
-        // of an animated drop-shadow filter: re-filtering the whole long line
-        // every frame was expensive enough to drop frames.
-        .fromTo(
-          lineGlow,
-          { opacity: LINE_GLOW_START },
-          { opacity: LINE_GLOW_END },
-          0
-        );
+        .fromTo(glowReveal, { progress: 0 }, {
+          progress: 1,
+          onUpdate: () => glowClip.setAttribute("width", String(glowWidth * glowReveal.progress)),
+        }, 0)
+        .fromTo(lineGlow, { opacity: 0.15 }, { opacity: 0.9 }, 0);
 
       return () => {
         drawTl.scrollTrigger?.kill();
@@ -341,11 +369,10 @@ export function ServicesShowcase() {
         tl.kill();
         gsap.set([...items, heading], { clearProps: "transform" });
         ScrollTrigger.removeEventListener("refresh", buildLine);
-        gsap.set([line, lineFill, lineGlow], { clearProps: "all" });
-        [lineFill, lineGlow].forEach((path) => {
-          path.removeAttribute("stroke-dasharray");
-          path.removeAttribute("stroke-dashoffset");
-        });
+        gsap.set([line, lineFill, lineGlow, glowClip], { clearProps: "all" });
+        lineFill.removeAttribute("stroke-dasharray");
+        lineFill.removeAttribute("stroke-dashoffset");
+        lineGlow.removeAttribute("href");
         section.classList.remove("is-showcase");
       };
     });

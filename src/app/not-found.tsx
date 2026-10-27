@@ -1,4 +1,3 @@
-import Link from "next/link";
 // The New UI's script face, for the big "404" and the title.
 import "@fontsource/lobster/latin-400.css";
 import { BackgroundLines } from "./new-ui/_components/background-lines";
@@ -30,9 +29,6 @@ export default function NotFound() {
         </p>
         <div className="nf-actions">
           <ReturnLink className="new-ui-primary">Back to the portfolio</ReturnLink>
-          <Link className="new-ui-secondary" href="/gallery">
-            Explore the gallery
-          </Link>
         </div>
       </div>
     </main>

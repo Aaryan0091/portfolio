@@ -41,7 +41,7 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-soft: cubic-bezier(0.33, 1, 0.68, 1);
 
-  /* The deep surface behind every dark page — New UI, Ask AI and the gallery.
+  /* The deep surface behind every dark page — New UI and Ask AI.
      Defined once here (and as RGB parts so it can be used with alpha) because
      it was previously a near-black literal repeated in ~30 places, which made
      it impossible to change the site's base colour in one edit. */
@@ -3798,6 +3798,8 @@ footer {
   position: absolute;
   inset: 0;
   overflow: hidden;
+  /* Travel is relative to this full-height layer, not the viewport. */
+  container-type: size;
 }
 
 .new-ui-line {
@@ -3808,12 +3810,11 @@ footer {
   background: rgba(244, 250, 247, 0.07);
 }
 
-/* The light streak running along each background line. A near-white core
-   inside the accent colour, with a layered glow. The glow is a drop-shadow
-   filter rather than box-shadow so it follows the streak's fading ends
-   instead of drawing a hard-edged glowing rectangle. */
+/* A pre-painted gradient glow moves with the core. Transform-only travel
+   avoids animating layout and re-filtering shadows on every Safari frame. */
 .new-ui-line-pulse {
   position: absolute;
+  top: 0;
   left: 50%;
   width: 4px;
   height: 220px;
@@ -3826,22 +3827,23 @@ footer {
     rgba(var(--new-ui-accent-rgb), 0.9) 70%,
     transparent
   );
-  filter:
-    drop-shadow(0 0 4px rgba(var(--new-ui-accent-rgb), 1))
-    drop-shadow(0 0 12px rgba(var(--new-ui-accent-rgb), 0.85))
-    drop-shadow(0 0 28px rgba(var(--new-ui-accent-rgb), 0.55));
   border-radius: 999px;
 }
 
+.new-ui-line-pulse::before {
+  content: "";
+  position: absolute;
+  inset: -24px -28px;
+  background: radial-gradient(ellipse, rgba(var(--new-ui-accent-rgb), 0.55), rgba(var(--new-ui-accent-rgb), 0.16) 35%, transparent 70%);
+}
+
 .new-ui-line-pulse-down {
-  top: -20%;
   animation-name: new-ui-line-run-down;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
 }
 
 .new-ui-line-pulse-up {
-  top: 120%;
   animation-name: new-ui-line-run-up;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
@@ -3849,7 +3851,7 @@ footer {
 
 @keyframes new-ui-line-run-down {
   0% {
-    top: -20%;
+    transform: translate3d(-50%, -20cqh, 0);
     opacity: 0;
   }
   15% {
@@ -3859,14 +3861,14 @@ footer {
     opacity: 1;
   }
   100% {
-    top: 120%;
+    transform: translate3d(-50%, 120cqh, 0);
     opacity: 0;
   }
 }
 
 @keyframes new-ui-line-run-up {
   0% {
-    top: 120%;
+    transform: translate3d(-50%, 120cqh, 0);
     opacity: 0;
   }
   15% {
@@ -3876,7 +3878,7 @@ footer {
     opacity: 1;
   }
   100% {
-    top: -20%;
+    transform: translate3d(-50%, -20cqh, 0);
     opacity: 0;
   }
 }
@@ -4475,6 +4477,25 @@ footer {
   font-size: clamp(1.1rem, 2.9svh, 1.5rem);
 }
 
+/* Browser chrome can leave a laptop with only ~720px of content height.
+   Keep all stack labels inside the two bands instead of clipping the text. */
+@media (max-height: 850px) {
+  .new-ui-services.is-showcase .new-ui-service-card {
+    padding: 1rem;
+    gap: 0.5rem;
+  }
+
+  .new-ui-services.is-showcase .new-ui-service-card h3 {
+    font-size: 1.125rem;
+    line-height: 1.25;
+  }
+
+  .new-ui-services.is-showcase .new-ui-service-stat strong {
+    font-size: 1.05rem;
+    line-height: 1.35;
+  }
+}
+
 /* Progress line: a zig-zag threaded through the cards — from the screen's
    left edge up to card 01's bottom, down to card 02's top, up to 03, down to
    04, then out to the screen's right edge. It lives in the middle strip
@@ -4517,13 +4538,10 @@ footer {
   stroke: var(--new-ui-accent);
 }
 
-/* Blurred copy under the fill: the glow. Its opacity rises as the line
-   draws (services-showcase.tsx). */
+/* Static glow image under the sharp stroke, revealed along with the line.
+   The blur belongs to the cached image rather than the animated path. */
 .new-ui-services-line .new-ui-services-line-glow {
-  /* Temporary Safari A/B test: hide only the filtered copy, not the sharp line. */
-  display: none;
-  stroke: var(--new-ui-accent);
-  stroke-width: 7;
+  display: block;
   opacity: 0;
 }
 
@@ -5423,12 +5441,8 @@ html:has(.new-ui-root)::-webkit-scrollbar {
   white-space: nowrap;
 }
 
-@media (max-width: 900px) {
-  .new-ui-service-item,
-  .new-ui-service-item:nth-child(1),
-  .new-ui-service-item:nth-child(2),
-  .new-ui-service-item:nth-child(3),
-  .new-ui-service-item:nth-child(4) {
+@media (max-width: 900px), (max-height: 699px) {
+  .new-ui-service-item:nth-child(n) {
     flex-direction: column;
     align-items: flex-start;
     margin-left: 0;
@@ -6662,165 +6676,6 @@ html:has(.new-ui-root)::-webkit-scrollbar {
   }
 }
 
-/* ---------------------------------------------------------------------------
-   Interactive WebGL gallery (/gallery)
-
-   Layout adapted from the 3D Interactive Gallery by Arun Kumar Bind:
-   https://github.com/abx15/3d-interactive-gallery
-
-   The grid's <img> elements are deliberately invisible. They exist to be
-   measured (each plane tracks its image's bounding rect) and to supply the
-   texture source; three.js paints the actual pixels onto the canvas behind.
---------------------------------------------------------------------------- */
-
-.gallery-page {
-  position: relative;
-  width: 100%;
-  height: 100svh;
-  overflow: hidden;
-  background: var(--dark-surface);
-  color: #f4faf7;
-}
-
-.gallery-stage {
-  position: absolute;
-  inset: 0;
-  cursor: grab;
-}
-
-.gallery-stage.is-dragging {
-  cursor: grabbing;
-}
-
-.gallery-canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-}
-
-.gallery-grid {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-.gallery-grid-col {
-  position: absolute;
-  top: 0;
-  width: 24rem;
-  max-width: 24rem;
-  height: 100%;
-  overflow: hidden;
-}
-
-.gallery-grid-figure {
-  position: absolute;
-  display: flex;
-  width: 24rem;
-  height: 30rem;
-  overflow: hidden;
-  user-select: none;
-}
-
-.gallery-grid-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  pointer-events: none;
-  user-select: none;
-  /* Measured, never painted — three.js draws these. */
-  visibility: hidden;
-  opacity: 0;
-}
-
-.gallery-overlay {
-  position: fixed;
-  left: 0;
-  right: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1.5rem clamp(1.25rem, 4vw, 2.5rem);
-  pointer-events: none;
-}
-
-.gallery-overlay > * {
-  pointer-events: auto;
-}
-
-.gallery-overlay-top {
-  top: 0;
-  background: linear-gradient(to bottom, rgba(var(--dark-surface-rgb), 0.8), transparent);
-}
-
-.gallery-overlay-bottom {
-  bottom: 0;
-  justify-content: center;
-  background: linear-gradient(to top, rgba(var(--dark-surface-rgb), 0.85), transparent);
-}
-
-.gallery-back {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.55rem 1.1rem;
-  border: 1px solid rgba(244, 250, 247, 0.35);
-  border-radius: 999px;
-  background: rgba(var(--dark-surface-rgb), 0.55);
-  backdrop-filter: blur(10px);
-  color: #f4faf7;
-  font-size: 0.9rem;
-  font-weight: 600;
-  transition: border-color 200ms ease, background 200ms ease;
-}
-
-.gallery-back:hover {
-  border-color: rgba(244, 250, 247, 0.7);
-  background: rgba(var(--dark-surface-rgb), 0.8);
-}
-
-.gallery-hint {
-  font-size: 0.82rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(244, 250, 247, 0.55);
-}
-
-.gallery-credit {
-  font-size: 0.78rem;
-  color: rgba(244, 250, 247, 0.5);
-  text-align: center;
-}
-
-.gallery-credit a {
-  color: rgba(244, 250, 247, 0.8);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.gallery-credit a:hover {
-  color: #f4faf7;
-}
-
-@media (max-width: 860px) {
-  .gallery-grid-col {
-    width: 16rem;
-    max-width: 16rem;
-  }
-
-  .gallery-grid-figure {
-    width: 16rem;
-    height: 20rem;
-  }
-
-  .gallery-hint {
-    display: none;
-  }
-}
 
 /* ---------------------------------------------------------------------------
    Loading screen (page-loader.tsx)

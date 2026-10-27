@@ -27,6 +27,7 @@ const POSTER_URL = "/video/hero-bg-poster.jpg";
 type NetworkInformation = { saveData?: boolean; effectiveType?: string };
 
 function shouldSkipVideo() {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return true;
   const connection = (navigator as Navigator & { connection?: NetworkInformation })
     .connection;
   if (!connection) return false;
@@ -37,14 +38,18 @@ function shouldSkipVideo() {
   );
 }
 
-const subscribeNever = () => () => {};
+function subscribeMotionPreference(onChange: () => void) {
+  const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+  media.addEventListener("change", onChange);
+  return () => media.removeEventListener("change", onChange);
+}
 
 export function HeroVideo() {
   const videoRef = useRef<HTMLVideoElement>(null);
   // Decided in the browser only (false during server rendering, so the
   // server HTML is just the photo).
   const useVideo = useSyncExternalStore(
-    subscribeNever,
+    subscribeMotionPreference,
     () => !shouldSkipVideo(),
     () => false
   );
@@ -53,9 +58,39 @@ export function HeroVideo() {
   useEffect(() => {
     const video = videoRef.current;
     if (!useVideo || !video) return;
-    // Muted autoplay is allowed everywhere; if the browser still refuses,
-    // the photo just stays.
-    video.play().catch(() => {});
+    // Set both properties before play(), including Safari's initial attempt.
+    // Autoplay can still be blocked by browser policy; retain the poster.
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+    let visible = false;
+    let disposed = false;
+    const syncPlayback = () => {
+      if (disposed) return;
+      if (!visible || document.hidden) {
+        video.pause();
+        return;
+      }
+      if (video.paused) void video.play().catch(() => {});
+    };
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      syncPlayback();
+    });
+    observer.observe(video);
+    video.addEventListener("canplay", syncPlayback);
+    document.addEventListener("visibilitychange", syncPlayback);
+    document.addEventListener("pointerdown", syncPlayback, { passive: true });
+    document.addEventListener("keydown", syncPlayback);
+    return () => {
+      disposed = true;
+      observer.disconnect();
+      video.removeEventListener("canplay", syncPlayback);
+      document.removeEventListener("visibilitychange", syncPlayback);
+      document.removeEventListener("pointerdown", syncPlayback);
+      document.removeEventListener("keydown", syncPlayback);
+      video.pause();
+    };
   }, [useVideo]);
 
   return (

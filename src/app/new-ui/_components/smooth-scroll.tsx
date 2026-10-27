@@ -50,6 +50,10 @@ const readReturnFlag = (): string | null => {
  * appears already in place instead of showing the top and gliding down. */
 const RESTORING_CLASS = "new-ui-restoring";
 
+// The CSS token is in rem; parseInt would turn 5.25rem into a 5px offset.
+const headerHeight = () =>
+  document.querySelector<HTMLElement>(".new-ui-header")?.offsetHeight ?? 80;
+
 export function SmoothScroll({ children }: { children: ReactNode }) {
   // Before the first paint: coming back via Back, hide the content until it
   // has been put back where the visitor left it (removed in the effect below).
@@ -118,11 +122,7 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
       // ScrollTrigger measurement on it. So: handle hash links ourselves, and
       // pin the wrapper's own scrollTop at 0 no matter what moves it.
       const wrapper = document.querySelector<HTMLElement>("#smooth-wrapper");
-      const navHeight =
-        parseInt(
-          getComputedStyle(root).getPropertyValue("--nav-height").trim(),
-          10
-        ) || 80;
+      let cancelActiveGlide: (() => void) | null = null;
 
       const handleAnchorClick = (event: MouseEvent) => {
         if (
@@ -154,7 +154,7 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
             target.getBoundingClientRect().height < window.innerHeight;
           destination = smoother.offset(
             target,
-            fits ? "center center" : `top ${navHeight + 16}px`
+            fits ? "center center" : `top ${headerHeight() + 16}px`
           );
         } else if (href === "#top") {
           destination = 0;
@@ -165,6 +165,7 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
         // A visible glide rather than a jump: the scroll position is tweened
         // with an ease-in-out, taking longer for longer trips (0.9–2.2s) so
         // even a jump across the whole page reads as one fast, smooth sweep.
+        cancelActiveGlide?.();
         const distance = Math.abs(destination - smoother.scrollTop());
         const glide = gsap.to(smoother, {
           scrollTop: destination,
@@ -181,10 +182,12 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
         };
         const stopOnInput = (listen: boolean) => {
           const method = listen ? "addEventListener" : "removeEventListener";
-          window[method]("wheel", cancel);
-          window[method]("touchstart", cancel);
+          window[method]("wheel", cancel, { passive: true });
+          window[method]("touchstart", cancel, { passive: true });
           window[method]("keydown", cancel);
+          if (!listen && cancelActiveGlide === cancel) cancelActiveGlide = null;
         };
+        cancelActiveGlide = cancel;
         stopOnInput(true);
       };
 
@@ -196,6 +199,7 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
       wrapper?.addEventListener("scroll", pinWrapper, { passive: true });
 
       return () => {
+        cancelActiveGlide?.();
         document.removeEventListener("click", handleAnchorClick);
         wrapper?.removeEventListener("scroll", pinWrapper);
         smoother.kill();
@@ -402,13 +406,7 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     // the page has its full, final length.
     let disposed = false;
     /** Header height plus a little air — where a section's top lands. */
-    const navHeightPx = () =>
-      (parseInt(
-        getComputedStyle(document.documentElement)
-          .getPropertyValue("--nav-height")
-          .trim(),
-        10
-      ) || 80) + 16;
+    const navHeightPx = () => headerHeight() + 16;
     const pageLoaded =
       document.readyState === "complete"
         ? Promise.resolve()

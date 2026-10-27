@@ -37,13 +37,33 @@ export function PortfolioProgress() {
     // trigger's own progress mixed units once the smoother's `speed` went
     // below 1, and the smoother's eased progress only reached 1 after its
     // catch-up animation, which no scroll event reported.)
-    const render = () => {
-      const max = ScrollTrigger.maxScroll(window);
+    let max = ScrollTrigger.maxScroll(window);
+    let frame = 0;
+    let lastProgress = -1;
+    let lastPercent = -1;
+    const paint = () => {
+      frame = 0;
       const progress = gsap.utils.clamp(0, 1, max > 0 ? window.scrollY / max : 0);
       // Grow the actual bar rather than scaling a full-width layer: scaling
       // also compresses its glow and can soften the short starting segment.
-      bar.style.width = `${progress * 100}%`;
-      track.setAttribute("aria-valuenow", String(Math.round(progress * 100)));
+      if (progress !== lastProgress) {
+        bar.style.width = `${progress * 100}%`;
+        lastProgress = progress;
+      }
+      const percent = Math.round(progress * 100);
+      if (percent !== lastPercent) {
+        track.setAttribute("aria-valuenow", String(percent));
+        lastPercent = percent;
+      }
+    };
+    // Native scroll and ScrollTrigger can both fire in one frame. Coalesce
+    // writes and measure page height only on refresh, not after every write.
+    const render = () => {
+      if (!frame) frame = requestAnimationFrame(paint);
+    };
+    const refresh = () => {
+      max = ScrollTrigger.maxScroll(window);
+      render();
     };
 
     const trigger = ScrollTrigger.create({
@@ -51,7 +71,7 @@ export function PortfolioProgress() {
       start: 0,
       end: "max",
       onUpdate: render,
-      onRefresh: render,
+      onRefresh: refresh,
     });
     render();
     // Also on the browser's own scroll events, so the very last pixel of a
@@ -105,6 +125,7 @@ export function PortfolioProgress() {
 
     return () => {
       trigger.kill();
+      cancelAnimationFrame(frame);
       window.removeEventListener("scroll", render);
       track.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener("pointermove", onPointerMove);
